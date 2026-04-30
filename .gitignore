@@ -1,0 +1,45 @@
+# Ambientes virtuales
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Generador de notebook (no subir)
+generate_notebook.py
+
+# MLFlow artifacts locales
+mlruns/
+mlflow.db
+
+# Modelo serializado (se regenera con train.py)
+best_model.pkl
+
+# Predicciones (se regeneran)
+test_predictions.parquet
+
+# Feature Store versiones locales
+feature_store/*.parquet
+feature_store/*.json
+
+# Logs
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# pytest
+.pytest_cache/

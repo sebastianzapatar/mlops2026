@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLOps Avanzado - Universidad EIA</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/monokai.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--v:#012237;--vl:#0C5ADB;--go:#0048BD;--gc:#21B8D2;--cr:#F0F4F8;--cd:#D6E1ED;--n:#1A1A1A;--g:#555}
+.reveal{font-family:'Inter',sans-serif;color:var(--n)}.reveal .slides{text-align:left}.reveal .slides section{background:var(--cr)}
+.reveal h1,.reveal h2,.reveal h3{text-transform:none;font-weight:700;color:var(--v);text-align:center}
+.reveal h2{font-size:1.6em;margin-bottom:.5em}.reveal h3{font-size:1.2em;color:var(--go)}
+.reveal p,.reveal li{font-size:.75em;line-height:1.6;color:var(--n)}.reveal ul,.reveal ol{margin-left:1em}.reveal li{margin-bottom:.4em}
+.reveal strong{color:var(--v)}.reveal code{background:var(--cd);color:var(--v);padding:2px 6px;border-radius:4px;font-size:.9em}
+.reveal pre{width:95%;margin:.8em auto;border-left:4px solid var(--gc);border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.reveal pre code{font-size:.6em;background:#282a36;color:#f8f8f2;padding:1em}
+.sh{background:var(--v);color:#fff;padding:8px 20px;border-radius:0 0 8px 8px;font-size:.6em;font-weight:600;text-align:center;letter-spacing:1px;margin:-20px auto 20px;width:fit-content}
+.sn{display:inline-block;background:var(--v);color:#fff;width:36px;height:36px;line-height:36px;text-align:center;border-radius:50%;font-weight:800;font-size:.8em;margin-right:8px;vertical-align:middle}
+.c{background:#fff;border-radius:10px;padding:18px;margin:10px 0;box-shadow:0 2px 10px rgba(0,0,0,.08);border-left:4px solid var(--gc)}
+.c h4{color:var(--go);margin:0 0 6px;font-size:.8em}.c p{margin:0;font-size:.68em}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.tag{display:inline-block;background:var(--gc);color:#fff;padding:3px 10px;border-radius:12px;font-size:.6em;font-weight:600;margin:2px}
+.tv{background:var(--v)}
+.rb{background:#fff;border:2px solid var(--gc);border-radius:10px;padding:14px;text-align:center}
+.rb .val{font-size:1.4em;font-weight:800;color:var(--v)}.rb .lab{font-size:.6em;color:var(--g)}
+.pf{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:20px 0}
+.ps{background:#fff;border:2px solid var(--gc);border-radius:8px;padding:10px 14px;text-align:center;font-size:.6em;font-weight:600;color:var(--go);min-width:100px}
+.ps.a{background:var(--v);color:#fff;border-color:var(--v)}.pa{font-size:1.2em;color:var(--gc)}
+.ft{position:fixed;bottom:12px;right:20px;font-size:.45em;color:var(--g);font-weight:600}
+.ts{text-align:center}.ts h1{font-size:2em;color:var(--v);margin-bottom:.1em}.ts .sub{font-size:.9em;color:var(--go);font-weight:600}.ts .meta{font-size:.65em;color:var(--g);margin-top:1.5em}
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- Portada -->
+<section>
+<div class="ts">
+<img src="eia_logo.webp" alt="Universidad EIA" style="height:80px; margin-bottom:10px;">
+<p style="font-size:.7em;color:var(--go);letter-spacing:2px;margin-bottom:0">UNIVERSIDAD EIA</p>
+<h1>MLOps Avanzado</h1>
+<p class="sub">CI/CD · Docker · Monitoreo · Reentrenamiento · Feature Store</p>
+<hr style="border:none;height:3px;background:linear-gradient(to right,var(--v),var(--gc));width:40%;margin:20px auto">
+<p class="meta">Fase 2 del Pipeline de Machine Learning</p>
+</div>
+</section>
+
+<!-- Agenda -->
+<section>
+<div class="sh">AGENDA</div>
+<h2>Contenido</h2>
+<div class="g2">
+<div class="c"><h4><span class="sn">1</span> CI/CD con GitHub Actions</h4><p>Automatización de tests, entrenamiento y despliegue.</p></div>
+<div class="c"><h4><span class="sn">2</span> Contenedores con Docker</h4><p>Dockerfile multi-stage y Docker Compose.</p></div>
+<div class="c"><h4><span class="sn">3</span> Monitoreo en Producción</h4><p>Data drift, logging de predicciones y alertas.</p></div>
+<div class="c"><h4><span class="sn">4</span> Reentrenamiento Automático</h4><p>Pipeline programado con comparación de modelos.</p></div>
+<div class="c"><h4><span class="sn">5</span> Feature Store</h4><p>Centralización y versionado de features.</p></div>
+<div class="c"><h4><span class="sn">6</span> Tests y Calidad</h4><p>11 tests unitarios para el pipeline completo.</p></div>
+</div>
+</section>
+
+<!-- CI/CD Intro -->
+<section>
+<div class="sh">SECCIÓN 1</div>
+<h2><span class="sn">1</span> CI/CD con GitHub Actions</h2>
+<div class="c" style="text-align:center"><p style="font-size:.8em"><strong>Continuous Integration / Continuous Deployment</strong> automatiza el ciclo: cada push dispara tests, entrenamiento y despliegue.</p></div>
+<div class="pf">
+<div class="ps a">git push</div><span class="pa">→</span>
+<div class="ps a">🧪 Tests</div><span class="pa">→</span>
+<div class="ps a">🤖 Train</div><span class="pa">→</span>
+<div class="ps a">🐳 Docker</div><span class="pa">→</span>
+<div class="ps a">🚀 Deploy</div>
+</div>
+<p style="text-align:center;font-size:.65em;color:var(--g)">Archivo: <code>.github/workflows/ci_cd.yml</code></p>
+</section>
+
+<!-- CI/CD Jobs -->
+<section>
+<div class="sh">SECCIÓN 1</div>
+<h2>3 Jobs del Pipeline CI/CD</h2>
+<div class="g3">
+<div class="c"><h4>🧪 Job 1: Test</h4><p>• Instala Poetry<br>• Lint con flake8<br>• Ejecuta pytest (11 tests)<br>• Falla el pipeline si hay errores</p></div>
+<div class="c"><h4>🤖 Job 2: Train</h4><p>• Depende de que tests pasen<br>• Ejecuta <code>train.py</code><br>• Sube artefactos (modelo, parquet, mlruns)</p></div>
+<div class="c"><h4>🐳 Job 3: Docker</h4><p>• Solo en rama <code>main</code><br>• Build de imagen Docker<br>• Push a Docker Hub con tag latest + SHA</p></div>
+</div>
+<pre><code class="language-yaml">on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:  # Permite ejecución manual</code></pre>
+</section>
+
+<!-- CI/CD Código -->
+<section>
+<div class="sh">SECCIÓN 1</div>
+<h2>Código del Workflow</h2>
+<pre><code class="language-yaml">jobs:
+  test:
+    name: "🧪 Tests & Linting"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install poetry
+      - run: poetry install --no-interaction
+      - run: poetry run flake8 *.py --max-line-length=120
+      - run: poetry run pytest tests/ -v
+
+  train:
+    needs: test
+    steps:
+      - run: poetry run python train.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: model-artifacts
+          path: |
+            best_model.pkl
+            test_predictions.parquet</code></pre>
+</section>
+
+<!-- Docker Intro -->
+<section>
+<div class="sh">SECCIÓN 2</div>
+<h2><span class="sn">2</span> Contenedores con Docker</h2>
+<div class="g2">
+<div class="c"><h4>¿Por qué Docker?</h4>
+<p>• <strong>Portabilidad:</strong> Funciona igual en cualquier máquina<br>
+• <strong>Aislamiento:</strong> Sin conflictos de dependencias<br>
+• <strong>Escalabilidad:</strong> Kubernetes, ECS, Cloud Run<br>
+• <strong>Reproducibilidad:</strong> Mismo entorno siempre</p></div>
+<div class="c"><h4>Arquitectura Multi-Stage</h4>
+<p>• <strong>Stage 1 (Builder):</strong> Instala Poetry, exporta requirements<br>
+• <strong>Stage 2 (Runner):</strong> Imagen slim solo con lo necesario<br>
+• Resultado: imagen ~400MB en lugar de ~1.5GB</p></div>
+</div>
+</section>
+
+<!-- Dockerfile -->
+<section>
+<div class="sh">SECCIÓN 2</div>
+<h2>Dockerfile Multi-Stage</h2>
+<pre><code class="language-dockerfile"># Stage 1: Builder
+FROM python:3.12-slim AS builder
+WORKDIR /app
+RUN pip install --no-cache-dir poetry
+COPY pyproject.toml poetry.lock ./
+RUN poetry export -f requirements.txt --without-hashes -o requirements.txt
+
+# Stage 2: Runner
+FROM python:3.12-slim AS runner
+WORKDIR /app
+COPY --from=builder /app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY app.py monitor.py feature_store.py best_model.pkl ./
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+</section>
+
+<!-- Docker Compose -->
+<section>
+<div class="sh">SECCIÓN 2</div>
+<h2>Docker Compose</h2>
+<pre><code class="language-yaml">services:
+  api:
+    build: .
+    container_name: mlops-api
+    ports: ["8000:8000"]
+    volumes: ["./logs:/app/logs"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+
+  mlflow:
+    image: python:3.12-slim
+    container_name: mlops-mlflow
+    command: >
+      bash -c "pip install mlflow &&
+      mlflow server --host 0.0.0.0 --port 5050"
+    ports: ["5050:5050"]</code></pre>
+<div class="c"><h4>Comandos</h4><p><code>docker compose up -d</code> → Levanta API + MLFlow<br><code>docker compose logs -f api</code> → Ver logs en tiempo real</p></div>
+</section>
+
+<!-- Monitoreo Intro -->
+<section>
+<div class="sh">SECCIÓN 3</div>
+<h2><span class="sn">3</span> Monitoreo del Modelo</h2>
+<div class="c" style="text-align:center"><p style="font-size:.8em">Un modelo en producción se <strong>degrada con el tiempo</strong>. El monitoreo detecta cuándo el comportamiento de los datos cambia (<em>data drift</em>).</p></div>
+<div class="g3">
+<div class="c"><h4>📊 Logging</h4><p>Cada predicción se registra con timestamp, inputs y output para auditoría.</p></div>
+<div class="c"><h4>⚠️ Drift Detection</h4><p>Compara cada input contra la distribución original usando z-score (umbral: 3σ).</p></div>
+<div class="c"><h4>📈 Resumen</h4><p>Estadísticas en tiempo real: total, promedio, min, max de predicciones.</p></div>
+</div>
+</section>
+
+<!-- Monitor Código -->
+<section>
+<div class="sh">SECCIÓN 3</div>
+<h2>Código del Monitor</h2>
+<pre><code class="language-python">class ModelMonitor:
+    def check_drift(self, input_data: dict) -> dict:
+        """Detecta data drift usando z-score."""
+        drifted = []
+        for feature, stats in self.reference_stats.items():
+            if feature in input_data and stats["std"] > 0:
+                z_score = abs(input_data[feature] - stats["mean"]) / stats["std"]
+                if z_score > 3:  # Más de 3 desviaciones estándar
+                    drifted.append({"feature": feature, "z_score": z_score})
+        return {"has_drift": len(drifted) > 0, "drifted_features": drifted}
+
+    def log_prediction(self, input_data, prediction):
+        """Registra predicción y verifica drift."""
+        record = {"timestamp": now(), "input": input_data, "prediction": prediction}
+        self.predictions_log.append(record)
+        drift = self.check_drift(input_data)
+        if drift["has_drift"]:
+            logger.warning(f"⚠️ DRIFT en: {drift['drifted_features']}")</code></pre>
+</section>
+
+<!-- Monitor Endpoints -->
+<section>
+<div class="sh">SECCIÓN 3</div>
+<h2>Endpoints de Monitoreo en la API</h2>
+<div class="g2">
+<div>
+<div class="c"><h4>GET /health</h4><p>Healthcheck para Docker y load balancers.</p></div>
+<div class="c"><h4>GET /monitor/summary</h4><p>Resumen de predicciones: total, promedio, min, max.</p></div>
+<div class="c"><h4>POST /monitor/check-drift</h4><p>Verifica drift en datos de entrada específicos.</p></div>
+</div>
+<div>
+<pre><code class="language-json">// GET /monitor/summary
+{
+  "total_predictions": 1542,
+  "avg_prediction": 215430.50,
+  "min_prediction": 45200.00,
+  "max_prediction": 498750.00,
+  "std_prediction": 89120.30,
+  "last_prediction_at": "2026-04..."
+}
+
+// POST /monitor/check-drift
+{
+  "has_drift": true,
+  "drifted_features": [
+    {"feature": "median_income",
+     "z_score": 4.82}
+  ]
+}</code></pre>
+</div>
+</div>
+</section>
+
+<!-- Reentrenamiento -->
+<section>
+<div class="sh">SECCIÓN 4</div>
+<h2><span class="sn">4</span> Reentrenamiento Automático</h2>
+<div class="c" style="text-align:center"><h4>¿Cuándo reentrenar?</h4>
+<p>• <strong>Programado:</strong> Cada lunes a las 6 AM (cron en GitHub Actions)<br>
+• <strong>Manual:</strong> Desde la UI de GitHub con workflow_dispatch<br>
+• <strong>Por drift:</strong> Cuando el monitor detecta degradación</p></div>
+<div class="pf">
+<div class="ps a">Datos nuevos</div><span class="pa">→</span>
+<div class="ps a">Feature Store</div><span class="pa">→</span>
+<div class="ps a">Entrenar</div><span class="pa">→</span>
+<div class="ps a">Comparar</div><span class="pa">→</span>
+<div class="ps a">¿Mejor?</div><span class="pa">→</span>
+<div class="ps a">Reemplazar</div>
+</div>
+</section>
+
+<!-- Retrain Código -->
+<section>
+<div class="sh">SECCIÓN 4</div>
+<h2>Lógica de Reentrenamiento</h2>
+<pre><code class="language-python">def retrain(data_path):
+    fs = FeatureStore()
+    df = pd.read_csv(data_path)
+    df = fs.add_derived_features(df)          # Features derivadas
+    fs.register_version(df, "auto-retrain")   # Versionar en Feature Store
+
+    # Entrenar con el mejor modelo conocido
+    pipeline.fit(X_train, y_train)
+    new_rmse = sqrt(mean_squared_error(y_test, predictions))
+
+    # Registrar en MLFlow
+    mlflow.log_metric("rmse", new_rmse)
+    mlflow.sklearn.log_model(pipeline, "model")
+
+    # Comparar con modelo actual
+    current = load_current_model_metrics()
+    if new_rmse < current["rmse"]:
+        joblib.dump(pipeline, "best_model.pkl")  # ✅ Reemplazar
+        logger.info(f"Mejora de ${current['rmse'] - new_rmse:,.2f}")
+    else:
+        logger.info("❌ Modelo actual se mantiene")</code></pre>
+</section>
+
+<!-- Retrain Workflow -->
+<section>
+<div class="sh">SECCIÓN 4</div>
+<h2>Workflow de Reentrenamiento</h2>
+<pre><code class="language-yaml">name: "🔄 Reentrenamiento Automático"
+on:
+  schedule:
+    - cron: "0 6 * * 1"    # Cada lunes 6 AM UTC
+  workflow_dispatch:        # Ejecución manual
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install poetry
+      - run: poetry install --no-interaction
+      - run: poetry run python retrain.py
+      - run: |
+          git config user.name "GitHub Actions Bot"
+          git add model_metrics.json feature_store/
+          git diff --staged --quiet || \
+            git commit -m "🤖 Auto-retrain $(date +%Y-%m-%d)"
+          git push</code></pre>
+</section>
+
+<!-- Feature Store Intro -->
+<section>
+<div class="sh">SECCIÓN 5</div>
+<h2><span class="sn">5</span> Feature Store Centralizado</h2>
+<div class="c" style="text-align:center"><p style="font-size:.8em">Un <strong>Feature Store</strong> centraliza la definición, transformación y versionado de features para garantizar <strong>consistencia</strong> entre entrenamiento y serving.</p></div>
+<div class="g3">
+<div class="c"><h4>📋 Definición</h4><p>8 numéricas, 1 categórica, 3 derivadas definidas en un solo lugar.</p></div>
+<div class="c"><h4>🔄 Versionado</h4><p>Cada conjunto de features se guarda como Parquet con metadatos JSON.</p></div>
+<div class="c"><h4>🧮 Features Derivadas</h4><p>rooms_per_household, bedrooms_per_room, population_per_household.</p></div>
+</div>
+</section>
+
+<!-- Feature Store Código -->
+<section>
+<div class="sh">SECCIÓN 5</div>
+<h2>Código del Feature Store</h2>
+<pre><code class="language-python">class FeatureStore:
+    NUMERIC_FEATURES = ["longitude", "latitude", "housing_median_age",
+                        "total_rooms", "total_bedrooms", "population",
+                        "households", "median_income"]
+    CATEGORICAL_FEATURES = ["ocean_proximity"]
+    DERIVED_FEATURES = {
+        "rooms_per_household": ("total_rooms", "households"),
+        "bedrooms_per_room": ("total_bedrooms", "total_rooms"),
+        "population_per_household": ("population", "households"),
+    }
+
+    def add_derived_features(self, df):
+        for name, (num, den) in self.DERIVED_FEATURES.items():
+            df[name] = df[num] / df[den].replace(0, np.nan)
+        return df
+
+    def register_version(self, df, description=""):
+        version_id = datetime.now().strftime("v_%Y%m%d_%H%M%S")
+        df.to_parquet(f"feature_store/{version_id}.parquet")
+        # Guardar metadatos (features, filas, timestamp)
+        return version_id</code></pre>
+</section>
+
+<!-- Tests -->
+<section>
+<div class="sh">SECCIÓN 6</div>
+<h2><span class="sn">6</span> Tests Unitarios</h2>
+<pre><code class="language-bash">$ poetry run pytest tests/ -v
+tests/test_pipeline.py::TestFeatureStore::test_derived_features     PASSED
+tests/test_pipeline.py::TestFeatureStore::test_preprocessor_creation PASSED
+tests/test_pipeline.py::TestFeatureStore::test_feature_info         PASSED
+tests/test_pipeline.py::TestMonitor::test_log_prediction            PASSED
+tests/test_pipeline.py::TestMonitor::test_drift_detection_normal    PASSED
+tests/test_pipeline.py::TestMonitor::test_drift_detection_extreme   PASSED
+tests/test_pipeline.py::TestMonitor::test_summary_empty             PASSED
+tests/test_pipeline.py::TestMonitor::test_summary_with_data         PASSED
+tests/test_pipeline.py::TestDataIntegrity::test_csv_exists          PASSED
+tests/test_pipeline.py::TestDataIntegrity::test_csv_columns         PASSED
+tests/test_pipeline.py::TestDataIntegrity::test_model_exists        PASSED
+============================== 11 passed in 0.88s =============</code></pre>
+</section>
+
+<!-- Estructura -->
+<section>
+<div class="sh">ESTRUCTURA</div>
+<h2>Estructura Completa del Proyecto</h2>
+<pre><code class="language-text">mlops/
+├── .github/workflows/
+│   ├── ci_cd.yml               # CI/CD: test → train → docker
+│   └── retrain.yml             # Reentrenamiento programado
+├── tests/
+│   └── test_pipeline.py        # 11 tests unitarios
+├── feature_store/              # Versiones de features (parquet)
+├── logs/                       # Logs de predicciones
+├── train.py                    # Entrenamiento (10 modelos)
+├── retrain.py                  # Reentrenamiento automático
+├── app.py                      # API FastAPI + monitoreo
+├── monitor.py                  # Data drift + logging
+├── feature_store.py            # Feature Store centralizado
+├── Dockerfile                  # Imagen multi-stage
+├── docker-compose.yml          # API + MLFlow
+├── pyproject.toml              # Dependencias (Poetry)
+└── best_model.pkl              # Modelo en producción</code></pre>
+</section>
+
+<!-- Conclusión -->
+<section>
+<div class="sh">CONCLUSIÓN</div>
+<h2>Pipeline MLOps Completo</h2>
+<div class="pf">
+<div class="ps a">Poetry</div><span class="pa">→</span>
+<div class="ps a">Feature Store</div><span class="pa">→</span>
+<div class="ps a">Train</div><span class="pa">→</span>
+<div class="ps a">MLFlow</div><span class="pa">→</span>
+<div class="ps a">CI/CD</div><span class="pa">→</span>
+<div class="ps a">Docker</div><span class="pa">→</span>
+<div class="ps a">Monitor</div><span class="pa">→</span>
+<div class="ps a">Retrain</div>
+</div>
+<div class="g2">
+<div class="c"><h4>✅ Implementado</h4>
+<p>• CI/CD con 3 jobs en GitHub Actions<br>• Docker multi-stage + Compose<br>• Monitoreo con data drift (z-score)<br>• Reentrenamiento semanal automático<br>• Feature Store con versionado<br>• 11 tests unitarios</p></div>
+<div class="c"><h4>🎯 Beneficios</h4>
+<p>• Despliegue sin intervención manual<br>• Modelo siempre actualizado<br>• Detección temprana de degradación<br>• Features consistentes train/serve<br>• Trazabilidad completa<br>• Entorno reproducible</p></div>
+</div>
+<p style="text-align:center;font-size:.7em;margin-top:16px;color:var(--go);font-weight:600">Universidad EIA — Ingeniería con propósito</p>
+</section>
+
+</div></div>
+<div class="ft">Universidad EIA · MLOps Avanzado</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
+<script>Reveal.initialize({hash:true,plugins:[RevealHighlight],transition:'slide',slideNumber:'c/t',width:1100,height:700,margin:.06,center:true});</script>
+</body>
+</html>

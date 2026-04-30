@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────────
+# Workflow de Reentrenamiento Programado
+# Se ejecuta cada lunes a las 6:00 AM UTC
+# ──────────────────────────────────────────────
+name: "🔄 Reentrenamiento Automático"
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Cada lunes a las 6 AM UTC
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Forzar reentrenamiento aunque no haya mejora"
+        required: false
+        default: "false"
+
+jobs:
+  retrain:
+    name: "Reentrenar Modelo"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Instalar dependencias
+        run: poetry install --no-interaction
+
+      - name: Ejecutar reentrenamiento
+        run: poetry run python retrain.py
+
+      - name: Guardar modelo actualizado
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrained-model
+          path: |
+            best_model.pkl
+            model_metrics.json
+            feature_store/
+
+      - name: Commit si hubo cambio de modelo
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add model_metrics.json feature_store/
+          git diff --staged --quiet || git commit -m "🤖 Auto-retrain: modelo actualizado $(date +%Y-%m-%d)"
+          git push || echo "No hay cambios para push"
