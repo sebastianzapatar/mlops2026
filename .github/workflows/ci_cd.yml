@@ -5,13 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  # Permite reentrenamiento manual desde la UI de GitHub
   workflow_dispatch:
-    inputs:
-      retrain:
-        description: "Forzar reentrenamiento del modelo"
-        required: false
-        default: "false"
 
 jobs:
   # ──────────────────────────────────────────────
@@ -34,72 +28,37 @@ jobs:
       - name: Instalar dependencias
         run: poetry install --no-interaction
 
-      - name: Lint con flake8
-        run: poetry run flake8 *.py --max-line-length=120 --ignore=E501
+      - name: Entrenar modelo para tests
+        run: poetry run python train.py
 
       - name: Ejecutar tests
         run: poetry run pytest tests/ -v --tb=short
 
   # ──────────────────────────────────────────────
-  # JOB 2: Entrenamiento del Modelo
+  # JOB 2: Deploy GitHub Pages (presentaciones)
   # ──────────────────────────────────────────────
-  train:
-    name: "🤖 Entrenar Modelo"
+  deploy-pages:
+    name: "🌐 Deploy Presentaciones"
     runs-on: ubuntu-latest
     needs: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Instalar Poetry
-        run: pip install poetry
-
-      - name: Instalar dependencias
-        run: poetry install --no-interaction
-
-      - name: Ejecutar entrenamiento
-        run: poetry run python train.py
-
-      - name: Guardar artefactos del modelo
-        uses: actions/upload-artifact@v4
-        with:
-          name: model-artifacts
-          path: |
-            best_model.pkl
-            test_predictions.parquet
-            mlruns/
-
-  # ──────────────────────────────────────────────
-  # JOB 3: Construir y Publicar Imagen Docker
-  # ──────────────────────────────────────────────
-  docker:
-    name: "🐳 Build & Push Docker"
-    runs-on: ubuntu-latest
-    needs: train
     if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Descargar artefactos del modelo
-        uses: actions/download-artifact@v4
-        with:
-          name: model-artifacts
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v4
 
-      - name: Login en Docker Hub
-        uses: docker/login-action@v3
+      - name: Subir artefactos de Pages
+        uses: actions/upload-pages-artifact@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          path: .
 
-      - name: Build y Push de imagen
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/mlops-housing:latest
-            ${{ secrets.DOCKER_USERNAME }}/mlops-housing:${{ github.sha }}
+      - name: Deploy a GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
