@@ -13,7 +13,6 @@ from sklearn.ensemble import (
     ExtraTreesRegressor,
 )
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.svm import SVR
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import mlflow
@@ -21,8 +20,15 @@ import mlflow.sklearn
 import joblib
 import pyarrow as pa
 import pyarrow.parquet as pq
-import os
-import json
+
+# MLflow guarda los modelos con skops (formato seguro, no ejecuta código al cargar).
+# skops exige declarar explícitamente los tipos internos de numpy/sklearn que usan los modelos.
+SKOPS_TRUSTED_TYPES = [
+    "numpy.dtype",
+    "sklearn.tree._tree.Tree",
+    "sklearn.neighbors._kd_tree.KDTree",
+    "sklearn.metrics._dist_metrics.EuclideanDistance64",
+]
 
 
 def load_data(path):
@@ -34,8 +40,9 @@ def preprocess_and_split(df):
     y = df["median_house_value"]
 
     # Identify numerical and categorical columns
-    num_cols = X.select_dtypes(include=["int64", "float64"]).columns
-    cat_cols = X.select_dtypes(include=["object"]).columns
+    # (listas simples: MLflow serializa el pipeline con skops, que no acepta pd.Index)
+    num_cols = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
+    cat_cols = X.select_dtypes(include=["object"]).columns.tolist()
 
     # Preprocessing for numerical data
     num_transformer = Pipeline(
@@ -177,7 +184,9 @@ def train_and_evaluate(X_train, X_test, y_train, y_test, preprocessor):
                 mlflow.log_metric(f"cv_rmse_fold_{i+1}", fold_rmse)
 
             # Log model
-            mlflow.sklearn.log_model(pipeline, "model")
+            mlflow.sklearn.log_model(
+                pipeline, name="model", skops_trusted_types=SKOPS_TRUSTED_TYPES
+            )
 
             if rmse < best_rmse:
                 best_rmse = rmse
@@ -199,9 +208,9 @@ def train_and_evaluate(X_train, X_test, y_train, y_test, preprocessor):
     pq.write_table(table, "test_predictions.parquet")
     print("Resultados guardados en test_predictions.parquet")
     print(
-        f"\n📊 Para ver los experimentos en MLFlow ejecuta:\n"
-        f"   poetry run mlflow ui\n"
-        f"   Luego abre http://localhost:5000 en tu navegador\n"
+        "\n📊 Para ver los experimentos en MLFlow ejecuta:\n"
+        "   uv run mlflow ui\n"
+        "   Luego abre http://localhost:5000 en tu navegador\n"
     )
 
 

@@ -15,7 +15,8 @@ import json
 import os
 import logging
 
-# Configuración de logging
+# Configuración de logging (logs/ está en .gitignore: crearla antes de abrir el archivo)
+os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

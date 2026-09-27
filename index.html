@@ -44,7 +44,7 @@
 .result-box { background: white; border: 2px solid var(--eia-azul-light); border-radius: 10px; padding: 14px; text-align: center; }
 .result-box .value { font-size: 1.4em; font-weight: 800; color: var(--eia-azul-dark); }
 .result-box .label { font-size: 0.6em; color: var(--eia-gris); }
-.footer-eia { position: fixed; bottom: 12px; right: 20px; font-size: 0.45em; color: var(--eia-gris); font-weight: 600; }
+.footer-eia { position: fixed; bottom: 12px; left: 20px; font-size: 0.45em; color: var(--eia-gris); font-weight: 600; }
 .title-slide { text-align: center; }
 .title-slide h1 { font-size: 2em; color: var(--eia-azul-dark); margin-bottom: 0.1em; }
 .title-slide .subtitle { font-size: 0.9em; color: var(--eia-azul); font-weight: 600; }
@@ -59,8 +59,11 @@
 .reveal table tr:nth-child(even) { background: white; }
 .reveal table tr:nth-child(odd) { background: var(--eia-crema); }
 .winner { background: #e8f5e9 !important; font-weight: 700; }
-.nav-btn { position: fixed; top: 12px; right: 20px; z-index: 100; background: var(--eia-azul); color: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 0.55em; font-weight: 600; font-family: 'Inter', sans-serif; transition: background 0.3s, transform 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.nav-btn:hover { background: var(--eia-azul-dark); transform: scale(1.05); }
+.deck-nav{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 4px 14px rgba(0,0,0,.14);font-family:'Inter',system-ui,sans-serif}
+.deck-nav a{padding:6px 14px;border-radius:999px;color:#012237;text-decoration:none;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;transition:background .2s,color .2s}
+.deck-nav a:hover{background:#EAF2FB}
+.deck-nav a[aria-current="page"]{background:#0C5ADB;color:#fff}
+@media print{.deck-nav{display:none}}
 </style>
 </head>
 <body>
@@ -70,7 +73,7 @@
 <!-- SLIDE 1: Portada -->
 <section>
 <div class="title-slide">
-<img src="eia_logo.webp" alt="Universidad EIA" style="height:80px; margin-bottom:10px;">
+<img src="eia_logo.webp" alt="Universidad EIA" style="background:#012237;padding:10px 18px;border-radius:12px;height:80px; margin-bottom:10px;">
 <p style="font-size:0.7em; color:var(--eia-azul); letter-spacing:2px; margin-bottom:0;">UNIVERSIDAD EIA</p>
 <h1>Pipeline Completo de MLOps</h1>
 <p class="subtitle">Predicción del Valor de Viviendas en California</p>
@@ -85,11 +88,12 @@
 <h2>Contenido de la Presentación</h2>
 <div class="grid-2">
 <div class="card"><h4><span class="step-number">1</span> Introducción a MLOps</h4><p>Conceptos fundamentales y ciclo de vida.</p></div>
-<div class="card"><h4><span class="step-number">2</span> Gestión de Entorno</h4><p>Poetry y dependencias reproducibles.</p></div>
+<div class="card"><h4><span class="step-number">2</span> Gestión de Entorno</h4><p>uv y dependencias reproducibles.</p></div>
 <div class="card"><h4><span class="step-number">3</span> Análisis Exploratorio</h4><p>EDA del dataset California Housing.</p></div>
-<div class="card"><h4><span class="step-number">4</span> Pipeline de ML</h4><p>Preprocesamiento y transformaciones.</p></div>
-<div class="card"><h4><span class="step-number">5</span> Tracking con MLFlow</h4><p>Registro y comparación de experimentos.</p></div>
-<div class="card"><h4><span class="step-number">6</span> Resultados y API</h4><p>Parquet, modelo final y despliegue.</p></div>
+<div class="card"><h4><span class="step-number">4</span> Pipeline de ML</h4><p>Preprocesamiento, data leakage y división.</p></div>
+<div class="card"><h4><span class="step-number">5</span> Modelos y Validación</h4><p>10 modelos, métricas y cross-validation.</p></div>
+<div class="card"><h4><span class="step-number">6</span> Tracking con MLflow</h4><p>Registro y comparación de experimentos.</p></div>
+<div class="card" style="grid-column:1 / -1;"><h4><span class="step-number">7</span> Resultados y API</h4><p>Parquet, modelo final y despliegue con FastAPI.</p></div>
 </div>
 </section>
 
@@ -111,7 +115,7 @@
 <p style="text-align:center; font-size:0.65em; color:var(--eia-gris);">Ciclo de vida continuo de un modelo de Machine Learning en producción</p>
 </section>
 
-<!-- SLIDE: Etapas Reales de MLOps -->
+<!-- SLIDE 4: Etapas reales de un proyecto MLOps -->
 <section>
 <div class="slide-header">SECCIÓN 1</div>
 <h2>Etapas Reales de un Proyecto MLOps</h2>
@@ -131,12 +135,12 @@
 </div>
 </section>
 
-<!-- SLIDE 4: Stack Tecnológico -->
+<!-- SLIDE 5: Stack tecnológico -->
 <section>
 <div class="slide-header">SECCIÓN 1</div>
 <h2>Stack Tecnológico del Ejercicio</h2>
 <div class="grid-3">
-<div class="card"><h4>🗂️ Entorno</h4><p><span class="tag tag-dark">Poetry</span><br>Gestión de dependencias determinista</p></div>
+<div class="card"><h4>🗂️ Entorno</h4><p><span class="tag tag-dark">uv</span><br>Python, entorno y dependencias reproducibles</p></div>
 <div class="card"><h4>📊 Exploración</h4><p><span class="tag">Pandas</span> <span class="tag">Seaborn</span> <span class="tag">Jupyter</span></p></div>
 <div class="card"><h4>🤖 Modelado</h4><p><span class="tag tag-dark">Scikit-Learn</span><br>Pipelines y modelos</p></div>
 <div class="card"><h4>📋 Tracking</h4><p><span class="tag">MLFlow</span><br>Registro de experimentos</p></div>
@@ -145,36 +149,47 @@
 </div>
 </section>
 
-<!-- SLIDE 5: Poetry -->
+<!-- SLIDE 6: Gestión de dependencias con uv -->
 <section>
 <div class="slide-header">SECCIÓN 2</div>
-<h2><span class="step-number">2</span> Gestión de Dependencias con Poetry</h2>
+<h2><span class="step-number">2</span> Gestión de Dependencias con uv</h2>
 <div class="grid-2">
 <div>
-<div class="card"><h4>¿Por qué Poetry y no pip?</h4>
-<p>• Resolución <strong>estricta</strong> de dependencias<br>
-• Archivo <code>poetry.lock</code> garantiza reproducibilidad<br>
-• Entornos virtuales automáticos<br>
-• Separación de dependencias de desarrollo</p>
+<div class="card"><h4>¿Por qué uv?</h4>
+<p>• <strong>Una sola herramienta:</strong> instala Python, crea el entorno virtual y resuelve dependencias<br>
+• <strong>Muy rápido:</strong> escrito en Rust, con caché global de paquetes<br>
+• <code>uv.lock</code> fija versiones exactas → <strong>reproducibilidad</strong><br>
+• <strong>Grupos:</strong> <code>dev</code> (tests, lint) y <code>eda</code> (Jupyter) separados del runtime<br>
+• <code>pyproject.toml</code> estándar (PEP 621), sin formato propio</p>
 </div>
+<table style="width:100%; margin:8px 0 0 0;">
+<thead><tr><th>Poetry</th><th>uv</th></tr></thead>
+<tbody>
+<tr><td><code>poetry install</code></td><td><code>uv sync</code></td></tr>
+<tr><td><code>poetry add pkg</code></td><td><code>uv add pkg</code></td></tr>
+<tr><td><code>poetry run cmd</code></td><td><code>uv run cmd</code></td></tr>
+<tr><td><code>poetry.lock</code></td><td><code>uv.lock</code></td></tr>
+</tbody>
+</table>
 </div>
 <div>
-<pre><code class="language-bash"># Inicializar proyecto
-poetry init -n
+<pre><code class="language-bash"># Instalar uv (una sola vez)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Instalar dependencias
-poetry add pandas scikit-learn \
-  matplotlib seaborn jupyter \
-  mlflow fastapi uvicorn \
-  "pyarrow&lt;24" nbformat
+# Crear el entorno exacto desde uv.lock
+# (descarga Python 3.12 si hace falta)
+uv sync
 
-# Ejecutar scripts
-poetry run python train.py</code></pre>
+# Agregar dependencias
+uv add pandas scikit-learn mlflow
+uv add --group eda jupyter seaborn
+
+# Ejecutar scripts dentro del entorno
+uv run python train.py</code></pre>
 </div>
 </div>
 </section>
-
-<!-- SLIDE 6: EDA Intro -->
+<!-- SLIDE 7: EDA: dataset -->
 <section>
 <div class="slide-header">SECCIÓN 3</div>
 <h2><span class="step-number">3</span> Análisis Exploratorio de Datos</h2>
@@ -183,7 +198,7 @@ poetry run python train.py</code></pre>
 <p>10 variables que describen bloques de viviendas en California — coordenadas, edad, habitaciones, población, ingreso y proximidad al océano.</p>
 </div>
 <div class="grid-2" style="margin-top:14px;">
-<div class="card"><h4>📋 Variables Numéricas (9)</h4>
+<div class="card"><h4>📋 Variables Numéricas (8)</h4>
 <p><code>longitude</code>, <code>latitude</code>, <code>housing_median_age</code>, <code>total_rooms</code>, <code>total_bedrooms</code>, <code>population</code>, <code>households</code>, <code>median_income</code></p></div>
 <div class="card"><h4>🏷️ Variable Categórica (1)</h4>
 <p><code>ocean_proximity</code>: NEAR BAY, INLAND, NEAR OCEAN, &lt;1H OCEAN, ISLAND</p></div>
@@ -191,7 +206,7 @@ poetry run python train.py</code></pre>
 <p style="text-align:center; font-size:0.7em; margin-top:10px;"><strong>Variable Objetivo:</strong> <code>median_house_value</code></p>
 </section>
 
-<!-- SLIDE 7: EDA Hallazgos -->
+<!-- SLIDE 8: EDA: hallazgos -->
 <section>
 <div class="slide-header">SECCIÓN 3</div>
 <h2>Hallazgos del EDA</h2>
@@ -203,7 +218,7 @@ poetry run python train.py</code></pre>
 </div>
 </section>
 
-<!-- SLIDE 8: Preprocesamiento -->
+<!-- SLIDE 9: Sección 4 · Pipeline de preprocesamiento -->
 <section>
 <div class="slide-header">SECCIÓN 4</div>
 <h2><span class="step-number">4</span> Pipeline de Preprocesamiento</h2>
@@ -235,7 +250,7 @@ cat_transformer = Pipeline([
 </div>
 </section>
 
-<!-- SLIDE: Data Leakage explicado -->
+<!-- SLIDE 10: Data leakage -->
 <section>
 <div class="slide-header">SECCIÓN 4</div>
 <h2>⚠️ ¿Qué es el Data Leakage?</h2>
@@ -261,7 +276,7 @@ cat_transformer = Pipeline([
 <p style="text-align:center; font-size:0.65em; color:var(--eia-gris); margin-top:10px;">Por eso usamos <code>Pipeline</code> + <code>ColumnTransformer</code>: garantizan que el fit() solo ocurre en entrenamiento.</p>
 </section>
 
-<!-- SLIDE 9: División de Datos -->
+<!-- SLIDE 11: División de datos -->
 <section>
 <div class="slide-header">SECCIÓN 4</div>
 <h2>División de Datos</h2>
@@ -278,32 +293,10 @@ cat_transformer = Pipeline([
 </div>
 </section>
 
-<!-- SLIDE 10: MLFlow -->
+<!-- SLIDE 12: Sección 5 · 10 modelos evaluados -->
 <section>
 <div class="slide-header">SECCIÓN 5</div>
-<h2><span class="step-number">5</span> Tracking con MLFlow</h2>
-<div class="card" style="text-align:center;">
-<h4>¿Por qué registrar experimentos?</h4>
-<p>Cuando evaluamos múltiples modelos, necesitamos <strong>comparar métricas</strong>, <strong>versionar modelos</strong> y <strong>reproducir resultados</strong>. MLFlow automatiza todo esto.</p>
-</div>
-<pre><code class="language-python">mlflow.set_experiment("California_Housing_Prediction")
-
-with mlflow.start_run(run_name=model_name):
-    pipeline.fit(X_train, y_train)
-    predictions = pipeline.predict(X_test)
-
-    rmse = np.sqrt(mean_squared_error(y_test, predictions))
-    r2 = r2_score(y_test, predictions)
-
-    mlflow.log_metric("rmse", rmse)
-    mlflow.log_metric("r2", r2)
-    mlflow.sklearn.log_model(pipeline, "model")</code></pre>
-</section>
-
-<!-- SLIDE 11: Modelos Evaluados - Familias -->
-<section>
-<div class="slide-header">SECCIÓN 5</div>
-<h2>10 Modelos Evaluados</h2>
+<h2><span class="step-number">5</span> 10 Modelos Evaluados</h2>
 <div class="grid-2">
 <div class="card"><h4>📐 Modelos Lineales</h4>
 <p>• <strong>Linear Regression:</strong> Baseline sin regularización<br>
@@ -321,17 +314,17 @@ with mlflow.start_run(run_name=model_name):
 <p><strong>KNN (K=5):</strong> Predice según los 5 vecinos más cercanos en el espacio de características.</p></div>
 </section>
 
-<!-- SLIDE: Interpretación de Métricas -->
+<!-- SLIDE 13: Cómo interpretar las métricas -->
 <section>
 <div class="slide-header">SECCIÓN 5</div>
 <h2>📏 ¿Cómo Interpretar las Métricas?</h2>
 <div class="grid-2">
 <div class="card"><h4>📐 RMSE — Root Mean Squared Error</h4>
 <p><strong>Penaliza más los errores grandes.</strong> Si un modelo predice $200K pero el valor real es $500K, ese error pesa mucho más que varios errores pequeños.<br><br>
-<em>Interpretación:</em> "En promedio, el modelo se equivoca por <strong>~$48,077</strong>" (ponderando errores grandes).</p></div>
+<em>Interpretación:</em> "En promedio, el modelo se equivoca por <strong>~$48,107</strong>" (ponderando errores grandes).</p></div>
 <div class="card"><h4>📊 MAE — Mean Absolute Error</h4>
 <p><strong>Error promedio simple.</strong> Más fácil de interpretar porque no amplifica outliers. Cada error pesa igual.<br><br>
-<em>Interpretación:</em> "En promedio, la predicción se desvía <strong>~$31,989</strong> del valor real".</p></div>
+<em>Interpretación:</em> "En promedio, la predicción se desvía <strong>~$32,004</strong> del valor real".</p></div>
 <div class="card"><h4>📈 R² — Coeficiente de Determinación</h4>
 <p><strong>% de varianza explicada.</strong> R²=0.82 significa que el modelo explica el <strong>82%</strong> de la variabilidad del precio.<br><br>
 <em>Rango:</em> 0 (no explica nada) → 1 (predicción perfecta). Puede ser negativo si el modelo es peor que la media.</p></div>
@@ -341,45 +334,9 @@ with mlflow.start_run(run_name=model_name):
 </div>
 </section>
 
-<!-- SLIDE 12: Tabla de Resultados -->
+<!-- SLIDE 14: Validación cruzada: concepto -->
 <section>
 <div class="slide-header">SECCIÓN 5</div>
-<h2>Comparación de Resultados</h2>
-<table>
-<thead><tr><th>Modelo</th><th>RMSE ($)</th><th>MAE ($)</th><th>R²</th></tr></thead>
-<tbody>
-<tr class="winner"><td>🏆 Gradient Boosting</td><td>48,077</td><td>31,989</td><td>0.8236</td></tr>
-<tr><td>Random Forest</td><td>48,942</td><td>31,628</td><td>0.8172</td></tr>
-<tr><td>Extra Trees</td><td>52,281</td><td>34,503</td><td>0.7914</td></tr>
-<tr><td>KNN</td><td>61,310</td><td>40,763</td><td>0.7132</td></tr>
-<tr><td>Decision Tree</td><td>66,557</td><td>41,586</td><td>0.6620</td></tr>
-<tr><td>Linear Regression</td><td>70,059</td><td>50,670</td><td>0.6254</td></tr>
-<tr><td>Ridge</td><td>70,066</td><td>50,677</td><td>0.6254</td></tr>
-<tr><td>Lasso</td><td>70,060</td><td>50,671</td><td>0.6254</td></tr>
-<tr><td>ElasticNet</td><td>78,389</td><td>59,268</td><td>0.5311</td></tr>
-<tr><td>AdaBoost</td><td>90,406</td><td>78,740</td><td>0.3763</td></tr>
-</tbody>
-</table>
-</section>
-
-<!-- SLIDE 13: Resultados del Mejor -->
-<section>
-<div class="slide-header">SECCIÓN 5</div>
-<h2>Modelo Ganador: Gradient Boosting</h2>
-<div class="grid-3">
-<div class="result-box"><div class="value">48,077</div><div class="label">RMSE (Error Promedio en $)</div></div>
-<div class="result-box"><div class="value">0.8236</div><div class="label">R² (Varianza Explicada)</div></div>
-<div class="result-box"><div class="value" style="color:var(--eia-azul);">Gradient Boosting</div><div class="label">Modelo Seleccionado</div></div>
-</div>
-<div class="card" style="margin-top:16px;">
-<h4>Interpretación</h4>
-<p>El <strong>Gradient Boosting</strong> (200 árboles, lr=0.1, max_depth=5) explica el <strong>82.4%</strong> de la varianza, con un error promedio de <strong>~$48,077</strong>. Los ensambles de árboles dominan frente a los modelos lineales, ya que capturan relaciones no lineales entre variables como <code>median_income</code>, <code>ocean_proximity</code> y coordenadas geográficas.</p>
-</div>
-</section>
-
-<!-- SLIDE: Validación Cruzada - Concepto -->
-<section>
-<div class="slide-header">VALIDACIÓN CRUZADA</div>
 <h2>🔄 ¿Qué es la Validación Cruzada (Cross-Validation)?</h2>
 <div class="card" style="text-align:center;">
 <p style="font-size:0.8em;">La <strong>validación cruzada K-Fold</strong> divide los datos de entrenamiento en <strong>K particiones</strong>. Se entrena K veces, cada vez usando una partición diferente como validación y el resto como entrenamiento. Esto da una estimación <strong>más robusta</strong> del rendimiento real del modelo.</p>
@@ -407,31 +364,118 @@ cv_rmse = np.sqrt(-cv_scores)</code></pre></div>
 </div>
 </section>
 
-<!-- SLIDE: CV Resultados -->
+<!-- SLIDE 15: Resultados en test -->
 <section>
-<div class="slide-header">VALIDACIÓN CRUZADA</div>
-<h2>Resultados de Cross-Validation (5-Fold)</h2>
+<div class="slide-header">SECCIÓN 5</div>
+<h2>Resultados en el Set de Prueba (20%)</h2>
 <table>
-<thead><tr><th>Modelo</th><th>RMSE Test ($)</th><th>CV RMSE μ ($)</th><th>CV RMSE σ ($)</th><th>Estabilidad</th></tr></thead>
+<thead><tr><th>Modelo</th><th>RMSE ($)</th><th>MAE ($)</th><th>R²</th></tr></thead>
 <tbody>
-<tr class="winner"><td>🏆 Gradient Boosting</td><td>48,077</td><td>48,383</td><td>950</td><td>⭐⭐⭐</td></tr>
-<tr><td>Random Forest</td><td>48,942</td><td>49,262</td><td>624</td><td>⭐⭐⭐</td></tr>
-<tr><td>Extra Trees</td><td>52,281</td><td>52,374</td><td>667</td><td>⭐⭐⭐</td></tr>
-<tr><td>KNN</td><td>61,310</td><td>61,732</td><td>742</td><td>⭐⭐⭐</td></tr>
-<tr><td>Decision Tree</td><td>66,557</td><td>67,226</td><td>1,254</td><td>⭐⭐</td></tr>
-<tr><td>Linear Regression</td><td>70,059</td><td>68,623</td><td>1,439</td><td>⭐⭐</td></tr>
-<tr><td>Ridge</td><td>70,066</td><td>68,622</td><td>1,440</td><td>⭐⭐</td></tr>
-<tr><td>ElasticNet</td><td>78,389</td><td>78,285</td><td>1,030</td><td>⭐⭐</td></tr>
-<tr><td>AdaBoost</td><td>90,406</td><td>89,439</td><td>3,264</td><td>⭐</td></tr>
+<tr class="winner"><td>🏆 Gradient Boosting</td><td>48,107</td><td>32,004</td><td>0.8234</td></tr>
+<tr><td>Random Forest</td><td>48,942</td><td>31,628</td><td>0.8172</td></tr>
+<tr><td>Extra Trees</td><td>52,281</td><td>34,503</td><td>0.7914</td></tr>
+<tr><td>KNN</td><td>61,310</td><td>40,763</td><td>0.7132</td></tr>
+<tr><td>Decision Tree</td><td>66,557</td><td>41,586</td><td>0.6620</td></tr>
+<tr><td>Linear Regression</td><td>70,059</td><td>50,670</td><td>0.6254</td></tr>
+<tr><td>Ridge</td><td>70,066</td><td>50,677</td><td>0.6254</td></tr>
+<tr><td>Lasso</td><td>70,060</td><td>50,671</td><td>0.6254</td></tr>
+<tr><td>ElasticNet</td><td>78,389</td><td>59,268</td><td>0.5311</td></tr>
+<tr><td>AdaBoost</td><td>90,406</td><td>78,740</td><td>0.3763</td></tr>
 </tbody>
 </table>
-<div class="card" style="margin-top:10px;"><h4>📊 Interpretación</h4>
-<p>La <strong>baja desviación estándar</strong> (σ) del Gradient Boosting confirma que su rendimiento es <strong>consistente</strong> a través de los folds. Los modelos lineales son estables pero con peor rendimiento. El Decision Tree muestra <strong>alta varianza</strong>, señal de overfitting.</p></div>
 </section>
 
-<!-- SLIDE: CV en MLFlow -->
+<!-- SLIDE 16: Resultados de CV -->
 <section>
-<div class="slide-header">VALIDACIÓN CRUZADA</div>
+<div class="slide-header">SECCIÓN 5</div>
+<h2>Resultados de Cross-Validation (5-Fold)</h2>
+<table style="font-size:0.55em;">
+<thead><tr><th>Modelo</th><th>RMSE Test ($)</th><th>CV RMSE μ ($)</th><th>CV RMSE σ ($)</th><th>σ / μ</th></tr></thead>
+<tbody>
+<tr class="winner"><td>🏆 Gradient Boosting</td><td>48,107</td><td>48,323</td><td>1,006</td><td>2.1%</td></tr>
+<tr><td>Random Forest</td><td>48,942</td><td>49,262</td><td>624</td><td>1.3%</td></tr>
+<tr><td>Extra Trees</td><td>52,281</td><td>52,374</td><td>667</td><td>1.3%</td></tr>
+<tr><td>KNN</td><td>61,310</td><td>61,732</td><td>742</td><td>1.2%</td></tr>
+<tr><td>Decision Tree</td><td>66,557</td><td>67,226</td><td>1,254</td><td>1.9%</td></tr>
+<tr><td>Linear Regression</td><td>70,059</td><td>68,623</td><td>1,439</td><td>2.1%</td></tr>
+<tr><td>Ridge</td><td>70,066</td><td>68,622</td><td>1,440</td><td>2.1%</td></tr>
+<tr><td>Lasso</td><td>70,060</td><td>68,623</td><td>1,439</td><td>2.1%</td></tr>
+<tr><td>ElasticNet</td><td>78,389</td><td>78,285</td><td>1,030</td><td>1.3%</td></tr>
+<tr><td>AdaBoost</td><td>90,406</td><td>89,439</td><td>3,264</td><td>3.6%</td></tr>
+</tbody>
+</table>
+<div class="card" style="margin-top:6px;"><h4>📊 Interpretación</h4>
+<p>• El RMSE de test de cada modelo es muy cercano a su μ de CV → el split 80/20 es <strong>representativo</strong> y las métricas son confiables.<br>
+• Todos los modelos son <strong>estables</strong> (σ ≈ 1–2% de μ), excepto <strong>AdaBoost</strong> (3.6%).<br>
+• <strong>Gradient Boosting</strong> tiene el menor error; <strong>Random Forest</strong> queda a ~1% y es algo más estable: un buen candidato alternativo.</p></div>
+</section>
+<!-- SLIDE 17: Modelo ganador -->
+<section>
+<div class="slide-header">SECCIÓN 5</div>
+<h2>Modelo Ganador: Gradient Boosting</h2>
+<div class="grid-3">
+<div class="result-box"><div class="value">48,107</div><div class="label">RMSE (Error Promedio en $)</div></div>
+<div class="result-box"><div class="value">0.8234</div><div class="label">R² (Varianza Explicada)</div></div>
+<div class="result-box"><div class="value" style="color:var(--eia-azul);">Gradient Boosting</div><div class="label">Modelo Seleccionado</div></div>
+</div>
+<div class="card" style="margin-top:16px;">
+<h4>Interpretación</h4>
+<p>El <strong>Gradient Boosting</strong> (200 árboles, lr=0.1, max_depth=5) explica el <strong>82.3%</strong> de la varianza, con un error promedio de <strong>~$48,107</strong>. Los ensambles de árboles dominan frente a los modelos lineales, ya que capturan relaciones no lineales entre variables como <code>median_income</code>, <code>ocean_proximity</code> y coordenadas geográficas.</p>
+</div>
+</section>
+
+<!-- SLIDE 18: Sección 6 · Tracking con MLflow -->
+<section>
+<div class="slide-header">SECCIÓN 6</div>
+<h2><span class="step-number">6</span> Tracking con MLflow</h2>
+<div class="card" style="text-align:center;">
+<h4>¿Por qué registrar experimentos?</h4>
+<p>Cuando evaluamos múltiples modelos, necesitamos <strong>comparar métricas</strong>, <strong>versionar modelos</strong> y <strong>reproducir resultados</strong>. MLFlow automatiza todo esto.</p>
+</div>
+<pre><code class="language-python">mlflow.set_experiment("California_Housing_Prediction")
+
+with mlflow.start_run(run_name=model_name):
+    pipeline.fit(X_train, y_train)
+    predictions = pipeline.predict(X_test)
+
+    rmse = np.sqrt(mean_squared_error(y_test, predictions))
+    r2 = r2_score(y_test, predictions)
+
+    mlflow.log_metric("rmse", rmse)
+    mlflow.log_metric("r2", r2)
+    mlflow.sklearn.log_model(pipeline, name="model")</code></pre>
+</section>
+
+<!-- SLIDE 19: Qué se registra en cada run -->
+<section>
+<div class="slide-header">SECCIÓN 6</div>
+<h2>¿Qué se registra en cada experimento?</h2>
+<pre><code class="language-python">with mlflow.start_run(run_name=name):
+    pipeline.fit(X_train, y_train)
+    predictions = pipeline.predict(X_test)
+
+    # Métricas registradas
+    mlflow.log_metric("rmse", rmse)
+    mlflow.log_metric("mae", mae)
+    mlflow.log_metric("r2", r2)
+    mlflow.log_metric("mse", mse)
+
+    # Parámetros del modelo
+    mlflow.log_param("model_type", name)
+    mlflow.log_param("n_estimators", 200)
+    mlflow.log_param("learning_rate", 0.1)
+
+    # Modelo serializado como artefacto
+    mlflow.sklearn.log_model(pipeline, name="model")</code></pre>
+<div class="card" style="margin-top:10px;">
+<h4>💡 Beneficio en producción</h4>
+<p>Cualquier miembro del equipo puede abrir MLFlow UI, comparar los 10 modelos, ver sus hiperparámetros y <strong>descargar el modelo ganador</strong> sin necesidad de re-ejecutar el código.</p>
+</div>
+</section>
+
+<!-- SLIDE 20: Logging de CV en MLflow -->
+<section>
+<div class="slide-header">SECCIÓN 6</div>
 <h2>Logging de CV en MLFlow</h2>
 <pre><code class="language-python"># Cross-Validation (5-fold) en cada modelo
 cv_scores_neg_mse = cross_val_score(
@@ -448,7 +492,7 @@ for i, fold_rmse in enumerate(cv_rmse_scores):
 <div class="grid-2" style="margin-top:12px;">
 <div class="card"><h4>💡 ¿Por qué registrar CV en MLFlow?</h4>
 <p>• Comparar <strong>estabilidad</strong> entre modelos<br>
-• Detectar <strong>overfitting</strong> (test RMSE ≪ CV RMSE)<br>
+• Verificar <strong>consistencia</strong>: si el RMSE de test difiere mucho de la μ de CV, el split no es representativo<br>
 • Trazabilidad completa del proceso de evaluación</p></div>
 <div class="card"><h4>📈 Métricas adicionales registradas</h4>
 <p>• <code>cv_rmse_mean</code>: RMSE promedio de 5 folds<br>
@@ -457,13 +501,13 @@ for i, fold_rmse in enumerate(cv_rmse_scores):
 </div>
 </section>
 
-<!-- SLIDE 14: MLFlow UI -->
+<!-- SLIDE 21: MLflow UI -->
 <section>
-<div class="slide-header">SECCIÓN 5</div>
+<div class="slide-header">SECCIÓN 6</div>
 <h2>Visualizar Experimentos con MLFlow UI</h2>
 <div class="card">
 <h4>Paso 1 — Lanzar la interfaz web de MLFlow</h4>
-<pre><code class="language-bash">poetry run mlflow ui
+<pre><code class="language-bash">uv run mlflow ui
 # Abre http://localhost:5000 en tu navegador</code></pre>
 </div>
 <div class="grid-2" style="margin-top:10px;">
@@ -482,37 +526,10 @@ for i, fold_rmse in enumerate(cv_rmse_scores):
 </div>
 </section>
 
-<!-- SLIDE 15: MLFlow Código de Logging -->
+<!-- SLIDE 22: Sección 7 · Almacenamiento en Parquet -->
 <section>
-<div class="slide-header">SECCIÓN 5</div>
-<h2>¿Qué se registra en cada experimento?</h2>
-<pre><code class="language-python">with mlflow.start_run(run_name=name):
-    pipeline.fit(X_train, y_train)
-    predictions = pipeline.predict(X_test)
-
-    # Métricas registradas
-    mlflow.log_metric("rmse", rmse)
-    mlflow.log_metric("mae", mae)
-    mlflow.log_metric("r2", r2)
-    mlflow.log_metric("mse", mse)
-
-    # Parámetros del modelo
-    mlflow.log_param("model_type", name)
-    mlflow.log_param("n_estimators", 200)
-    mlflow.log_param("learning_rate", 0.1)
-
-    # Modelo serializado como artefacto
-    mlflow.sklearn.log_model(pipeline, "model")</code></pre>
-<div class="card" style="margin-top:10px;">
-<h4>💡 Beneficio en producción</h4>
-<p>Cualquier miembro del equipo puede abrir MLFlow UI, comparar los 10 modelos, ver sus hiperparámetros y <strong>descargar el modelo ganador</strong> sin necesidad de re-ejecutar el código.</p>
-</div>
-</section>
-
-<!-- SLIDE 13: Parquet -->
-<section>
-<div class="slide-header">SECCIÓN 6</div>
-<h2><span class="step-number">6</span> Almacenamiento en Parquet</h2>
+<div class="slide-header">SECCIÓN 7</div>
+<h2><span class="step-number">7</span> Almacenamiento en Parquet</h2>
 <div class="grid-2">
 <div>
 <div class="card"><h4>¿Por qué Parquet y no CSV?</h4>
@@ -540,9 +557,9 @@ pq.write_table(table,
 </div>
 </section>
 
-<!-- SLIDE 14: API -->
+<!-- SLIDE 23: API con FastAPI -->
 <section>
-<div class="slide-header">SECCIÓN 6</div>
+<div class="slide-header">SECCIÓN 7</div>
 <h2>Despliegue del Modelo como API</h2>
 <p style="text-align:center; font-size:0.7em;">FastAPI nos permite exponer el modelo como servicio REST con documentación automática.</p>
 <pre><code class="language-python">class HousingData(BaseModel):
@@ -558,18 +575,20 @@ pq.write_table(table,
 
 @app.post("/predict")
 def predict(data: HousingData):
-    input_data = pd.DataFrame([data.dict()])
+    input_data = pd.DataFrame([data.model_dump()])
+    # Mismas features derivadas que en entrenamiento
+    input_data = feature_store.add_derived_features(input_data)
     prediction = model.predict(input_data)[0]
     return {"predicted_median_house_value": float(prediction)}</code></pre>
 </section>
 
-<!-- SLIDE 15: Cómo Ejecutar -->
+<!-- SLIDE 24: Cómo ejecutar la API -->
 <section>
-<div class="slide-header">SECCIÓN 6</div>
+<div class="slide-header">SECCIÓN 7</div>
 <h2>¿Cómo ejecutar la API?</h2>
 <div class="card">
 <h4>Paso 1 — Levantar el servidor</h4>
-<pre><code class="language-bash">poetry run uvicorn app:app --reload</code></pre>
+<pre><code class="language-bash">uv run uvicorn app:app --reload</code></pre>
 </div>
 <div class="card">
 <h4>Paso 2 — Probar en el navegador</h4>
@@ -587,29 +606,32 @@ def predict(data: HousingData):
 </div>
 </section>
 
-<!-- SLIDE 16: Estructura del Proyecto -->
+<!-- SLIDE 25: Estructura del proyecto -->
 <section>
 <div class="slide-header">ESTRUCTURA</div>
 <h2>Estructura del Proyecto</h2>
 <pre><code class="language-text">mlops/
-├── pyproject.toml          # Dependencias (Poetry)
-├── poetry.lock             # Versiones exactas
-├── 1553768847-housing.csv  # Dataset original
-├── eda.ipynb               # Cuaderno de exploración
-├── train.py                # Pipeline de entrenamiento
-├── app.py                  # API FastAPI
-├── best_model.pkl          # Modelo ganador serializado
-├── test_predictions.parquet # Predicciones del test
-├── mlruns/                 # Artefactos de MLFlow
-└── presentacion_mlops.html # Esta presentación</code></pre>
+├── pyproject.toml           # Dependencias (uv)
+├── uv.lock                  # Versiones exactas
+├── .python-version          # Python 3.12
+├── 1553768847-housing.csv   # Dataset original
+├── eda.ipynb                # Cuaderno de exploración
+├── train.py                 # Pipeline de entrenamiento
+├── app.py                   # API FastAPI
+├── best_model.pkl           # Modelo ganador (generado)
+├── test_predictions.parquet # Predicciones del test (generado)
+├── mlruns/ + mlflow.db      # Experimentos de MLflow (generado)
+├── mlops.html               # Presentación 1: Intro
+├── index.html               # Presentación 2: esta
+└── presentacion_mlops_avanzado.html  # Presentación 3</code></pre>
 </section>
 
-<!-- SLIDE 17: Conclusión -->
+<!-- SLIDE 26: Conclusión -->
 <section>
 <div class="slide-header">CONCLUSIÓN</div>
 <h2>Resumen del Flujo MLOps</h2>
 <div class="pipeline-flow">
-<div class="pipeline-step active">Poetry</div><span class="pipeline-arrow">→</span>
+<div class="pipeline-step active">uv</div><span class="pipeline-arrow">→</span>
 <div class="pipeline-step active">EDA</div><span class="pipeline-arrow">→</span>
 <div class="pipeline-step active">Pipeline</div><span class="pipeline-arrow">→</span>
 <div class="pipeline-step active">Cross-Val</div><span class="pipeline-arrow">→</span>
@@ -620,7 +642,7 @@ def predict(data: HousingData):
 </div>
 <div class="grid-2">
 <div class="card"><h4>✅ Lo que logramos</h4>
-<p>• Entorno reproducible con Poetry<br>
+<p>• Entorno reproducible con uv + <code>uv.lock</code><br>
 • EDA completo con 13 secciones de análisis<br>
 • <strong>10 modelos</strong> evaluados y registrados en MLFlow<br>
 • <strong>Validación cruzada 5-Fold</strong> para evaluación robusta<br>
@@ -638,10 +660,10 @@ def predict(data: HousingData):
 <p style="text-align:center; font-size:0.7em; margin-top:16px; color:var(--eia-azul); font-weight:600;">Universidad EIA — Ingeniería con propósito</p>
 </section>
 
-<!-- SLIDE: Puente a Parte 2 -->
+<!-- SLIDE 27: Puente a la Parte 2 -->
 <section>
 <div class="title-slide">
-<img src="eia_logo.webp" alt="Universidad EIA" style="height:60px; margin-bottom:10px;">
+<img src="eia_logo.webp" alt="Universidad EIA" style="background:#012237;padding:10px 18px;border-radius:12px;height:60px; margin-bottom:10px;">
 <h2>Continúa en la Parte 2</h2>
 <p class="subtitle">MLOps Avanzado</p>
 <hr style="border:none; height:3px; background: linear-gradient(to right, var(--eia-azul-dark), var(--eia-azul-light)); width:40%; margin:20px auto;">
@@ -659,8 +681,7 @@ def predict(data: HousingData):
 </div>
 </div>
 
-<a href="mlops.html" class="nav-btn" style="right:auto;left:20px;">← Intro: MLOps</a>
-<a href="presentacion_mlops_avanzado.html" class="nav-btn">Parte 2: Avanzado →</a>
+<nav class="deck-nav" aria-label="Presentaciones del curso"><a href="mlops.html">① Intro MLOps</a><a href="index.html" aria-current="page">② Pipeline práctico</a><a href="presentacion_mlops_avanzado.html">③ MLOps avanzado</a></nav>
 <div class="footer-eia">Universidad EIA · MLOps</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
