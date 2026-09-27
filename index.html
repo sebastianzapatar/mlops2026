@@ -36,6 +36,7 @@
 .step-number { display: inline-block; background: var(--eia-azul); color: white; width: 36px; height: 36px; line-height: 36px; text-align: center; border-radius: 50%; font-weight: 800; font-size: 0.8em; margin-right: 8px; vertical-align: middle; }
 .card { background: white; border-radius: 10px; padding: 18px; margin: 10px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid var(--eia-azul-light); }
 .card h4 { color: var(--eia-azul); margin: 0 0 6px 0; font-size: 0.8em; }
+.card h4 a { color: inherit; text-decoration-color: var(--eia-azul-light); }
 .card p { margin: 0; font-size: 0.68em; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -89,7 +90,7 @@
 <div class="grid-2">
 <div class="card"><h4><span class="step-number">1</span> Introducción a MLOps</h4><p>Conceptos fundamentales y ciclo de vida.</p></div>
 <div class="card"><h4><span class="step-number">2</span> Gestión de Entorno</h4><p>uv y dependencias reproducibles.</p></div>
-<div class="card"><h4><span class="step-number">3</span> Análisis Exploratorio</h4><p>EDA del dataset California Housing.</p></div>
+<div class="card"><h4><span class="step-number">3</span> Análisis Exploratorio</h4><p>EDA tradicional y automatizado (Sweetviz).</p></div>
 <div class="card"><h4><span class="step-number">4</span> Pipeline de ML</h4><p>Preprocesamiento, data leakage y división.</p></div>
 <div class="card"><h4><span class="step-number">5</span> Modelos y Validación</h4><p>10 modelos, métricas y cross-validation.</p></div>
 <div class="card"><h4><span class="step-number">6</span> Tracking con MLflow</h4><p>Registro y comparación de experimentos.</p></div>
@@ -141,7 +142,7 @@
 <h2>Stack Tecnológico del Ejercicio</h2>
 <div class="grid-3">
 <div class="card"><h4>🗂️ Entorno</h4><p><span class="tag tag-dark">uv</span><br>Python, entorno y dependencias reproducibles</p></div>
-<div class="card"><h4>📊 Exploración</h4><p><span class="tag">Pandas</span> <span class="tag">Seaborn</span> <span class="tag">Jupyter</span></p></div>
+<div class="card"><h4>📊 Exploración</h4><p><span class="tag">Pandas</span> <span class="tag">Seaborn</span> <span class="tag">Sweetviz</span> <span class="tag">Jupyter</span></p></div>
 <div class="card"><h4>🤖 Modelado</h4><p><span class="tag tag-dark">Scikit-Learn</span><br>Pipelines y modelos</p></div>
 <div class="card"><h4>📋 Tracking</h4><p><span class="tag">MLFlow</span><br>Registro de experimentos</p></div>
 <div class="card"><h4>💾 Almacenamiento</h4><p><span class="tag tag-dark">PyArrow</span><br>Formato Parquet</p></div>
@@ -215,6 +216,57 @@ uv run python train.py</code></pre>
 <div class="card"><h4>📈 Correlación Clave</h4><p><code>median_income</code> tiene la <strong>mayor correlación</strong> con el valor de la vivienda (r ≈ 0.69). Es el predictor más relevante.</p></div>
 <div class="card"><h4>⚠️ Valores Atípicos</h4><p>La variable objetivo está <strong>truncada en $500,001</strong>, lo que indica un techo artificial en los datos originales.</p></div>
 <div class="card"><h4>🗺️ Distribución Geográfica</h4><p>Las viviendas cerca de la costa (<em>NEAR BAY</em>, <em>NEAR OCEAN</em>) tienden a tener <strong>valores más altos</strong>.</p></div>
+</div>
+</section>
+
+<!-- SLIDE 8b: EDA automatizado con Sweetviz -->
+<section>
+<div class="slide-header">SECCIÓN 3</div>
+<h2>EDA Automatizado con Sweetviz</h2>
+<p style="text-align:center; font-size:0.7em;">Un reporte HTML interactivo completo con <strong>una línea de código</strong> y ~3 segundos de ejecución.</p>
+<div class="grid-2">
+<div>
+<pre><code class="language-python">import sweetviz as sv
+
+# 1. Reporte del dataset completo
+sv.analyze(df, target_feat='median_house_value') \
+  .show_html('reportes/sweetviz_eda.html')
+
+# 2. Train vs Test (misma partición de train.py)
+train_df, test_df = train_test_split(
+    df, test_size=0.2, random_state=42)
+sv.compare([train_df, 'Train'], [test_df, 'Test'])
+
+# 3. Subgrupos del mismo dataset
+sv.compare_intra(df, df['ocean_proximity'] == 'INLAND',
+                 ['Interior', 'Costa'])</code></pre>
+</div>
+<div>
+<div class="card"><h4>📊 <a href="reportes/sweetviz_eda.html" target="_blank">Reporte general</a></h4><p>Tipos, nulos, distribuciones, estadísticas y asociación de cada variable con el objetivo.</p></div>
+<div class="card"><h4>⚖️ <a href="reportes/sweetviz_train_vs_test.html" target="_blank">Train vs Test</a></h4><p>¿La partición es representativa? Es la misma pregunta que el <strong>monitoreo de drift</strong>, pero antes de entrenar.</p></div>
+<div class="card"><h4>🏖️ <a href="reportes/sweetviz_interior_vs_costa.html" target="_blank">Interior vs Costa</a></h4><p>Compara todas las variables entre segmentos a la vez.</p></div>
+</div>
+</div>
+</section>
+
+<!-- SLIDE 8c: EDA tradicional vs Sweetviz -->
+<section>
+<div class="slide-header">SECCIÓN 3</div>
+<h2>EDA Tradicional vs Sweetviz</h2>
+<table>
+<thead><tr><th>Aspecto</th><th>Tradicional (Pandas + Seaborn)</th><th>Sweetviz</th></tr></thead>
+<tbody>
+<tr><td><strong>Esfuerzo</strong></td><td>~250 líneas en 13 celdas</td><td>1–2 líneas por reporte</td></tr>
+<tr><td><strong>Cobertura</strong></td><td>Solo lo que el analista decide mirar</td><td>Todas las variables, siempre igual</td></tr>
+<tr><td><strong>Personalización</strong></td><td>Total: mapas, hexbin, QQ-plot, IQR</td><td>Limitada al formato del reporte</td></tr>
+<tr><td><strong>Categóricas</strong></td><td>Gráficos manuales; Pearson no las incluye</td><td><code>ocean_proximity</code> → η = 0.49 con el objetivo</td></tr>
+<tr><td><strong>Comparar datasets</strong></td><td>Hay que programarlo</td><td><code>compare</code> / <code>compare_intra</code> nativos</td></tr>
+<tr><td><strong>Hipótesis y features</strong></td><td>Sí: techo de $500,001, features derivadas</td><td>No: describe, no interpreta</td></tr>
+</tbody>
+</table>
+<div class="grid-2" style="margin-top:8px;">
+<div class="card"><h4>✅ Mismas conclusiones</h4><p>Ambos encuentran los <strong>207 nulos</strong> y <code>median_income</code> como mejor predictor (<strong>r = 0.688</strong>).</p></div>
+<div class="card"><h4>🔄 No son excluyentes</h4><p><strong>Sweetviz primero</strong> → EDA manual enfocado → reporte HTML como <strong>artefacto versionado</strong> con cada versión de los datos.</p></div>
 </div>
 </section>
 
@@ -643,7 +695,7 @@ def predict(data: HousingData):
 <div class="grid-2">
 <div class="card"><h4>✅ Lo que logramos</h4>
 <p>• Entorno reproducible con uv + <code>uv.lock</code><br>
-• EDA completo con 13 secciones de análisis<br>
+• EDA manual (13 secciones) + reportes Sweetviz<br>
 • <strong>10 modelos</strong> evaluados y registrados en MLFlow<br>
 • <strong>Validación cruzada 5-Fold</strong> para evaluación robusta<br>
 • Prevención de <strong>data leakage</strong> con Pipelines<br>

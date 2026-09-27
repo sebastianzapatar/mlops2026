@@ -38,6 +38,7 @@ mlops/
 ├── feature_store.py            # 🧮 Feature Store centralizado
 ├── retrain.py                  # 🔄 Reentrenamiento automático
 ├── eda.ipynb                   # 📊 Notebook de análisis exploratorio
+├── reportes/                   # 📑 Reportes HTML de Sweetviz (generados por eda.ipynb)
 ├── 1553768847-housing.csv      # 📁 Dataset original
 ├── pyproject.toml              # 📦 Dependencias (uv)
 ├── uv.lock                     # 🔒 Versiones exactas
@@ -77,7 +78,7 @@ uv sync
 |-------|-----------|--------------|
 | *(principal)* | pandas, scikit-learn, mlflow, fastapi, uvicorn, pyarrow | Siempre (también en Docker) |
 | `dev` | pytest, flake8, httpx2 | Tests y CI |
-| `eda` | jupyter, matplotlib, seaborn, nbformat | Notebook `eda.ipynb` |
+| `eda` | jupyter, matplotlib, seaborn, sweetviz, nbformat | Notebook `eda.ipynb` |
 
 Para instalar solo lo necesario para producción: `uv sync --no-default-groups`.
 
@@ -150,7 +151,7 @@ curl -X POST http://localhost:8000/predict \
 
 ## 🔬 Análisis Exploratorio (EDA)
 
-El notebook `eda.ipynb` contiene **13 secciones** de análisis:
+El notebook `eda.ipynb` contiene **15 secciones**: 13 de EDA tradicional y 2 de EDA automatizado con Sweetviz:
 
 1. **Información general** del dataset
 2. **Estadísticas descriptivas** con heatmap
@@ -165,6 +166,10 @@ El notebook `eda.ipynb` contiene **13 secciones** de análisis:
 11. **Detección de outliers** con IQR
 12. **Feature Engineering** — variables derivadas
 13. **Conclusiones** del análisis
+14. **Sweetviz** — reporte general, Train vs Test (misma partición de `train.py`) e Interior vs Costa
+15. **Tradicional vs Sweetviz** — verificación de que ambos coinciden y tabla comparativa
+
+Los reportes HTML de Sweetviz quedan en `reportes/` y se enlazan desde la presentación.
 
 ```bash
 uv run jupyter notebook eda.ipynb
