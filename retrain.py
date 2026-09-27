@@ -2,7 +2,7 @@
 retrain.py - Sistema de Reentrenamiento Automático
 ====================================================
 Este script puede ejecutarse:
-- Manualmente: poetry run python retrain.py
+- Manualmente: uv run python retrain.py
 - Por GitHub Actions: workflow_dispatch o schedule
 - Por el monitor: cuando detecta data drift significativo
 
@@ -28,6 +28,7 @@ import os
 import json
 from datetime import datetime
 from feature_store import FeatureStore
+from train import SKOPS_TRUSTED_TYPES
 
 import logging
 
@@ -151,7 +152,9 @@ def retrain(data_path: str = "1553768847-housing.csv"):
         mlflow.log_metric("mae", mae)
         mlflow.log_metric("r2", r2)
 
-        mlflow.sklearn.log_model(pipeline, "model")
+        mlflow.sklearn.log_model(
+            pipeline, name="model", skops_trusted_types=SKOPS_TRUSTED_TYPES
+        )
 
     # 10. Comparar con modelo actual
     current_metrics = load_current_model_metrics()

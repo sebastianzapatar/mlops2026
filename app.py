@@ -51,14 +51,15 @@ def predict(data: HousingData):
     if not model:
         return {"error": "El modelo no está disponible."}
 
-    # Convertir el payload a DataFrame
-    input_data = pd.DataFrame([data.dict()])
+    # Convertir el payload a DataFrame y agregar las features derivadas del
+    # Feature Store (el modelo de retrain.py las necesita; el de train.py las ignora)
+    input_data = feature_store.add_derived_features(pd.DataFrame([data.model_dump()]))
 
     # Predecir
     prediction = model.predict(input_data)[0]
 
     # Registrar en el monitor (data drift + logging)
-    monitor.log_prediction(data.dict(), float(prediction))
+    monitor.log_prediction(data.model_dump(), float(prediction))
 
     return {"predicted_median_house_value": float(prediction)}
 
@@ -72,7 +73,7 @@ def monitor_summary():
 @app.post("/monitor/check-drift")
 def check_drift(data: HousingData):
     """Verifica si los datos de entrada presentan data drift."""
-    return monitor.check_drift(data.dict())
+    return monitor.check_drift(data.model_dump())
 
 
 @app.get("/features/info")

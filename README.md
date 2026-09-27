@@ -7,7 +7,7 @@
 *✨ Pipeline completo de Machine Learning Operations ✨*
 
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://python.org)
-[![Poetry](https://img.shields.io/badge/Poetry-Dependency%20Manager-60A5FA?logo=poetry)](https://python-poetry.org)
+[![uv](https://img.shields.io/badge/uv-Dependency%20Manager-DE5FE9?logo=uv)](https://docs.astral.sh/uv/)
 [![MLFlow](https://img.shields.io/badge/MLFlow-Experiment%20Tracking-0194E2?logo=mlflow)](https://mlflow.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-ML%20Models-F7931E?logo=scikit-learn)](https://scikit-learn.org)
@@ -23,7 +23,7 @@ Pipeline end-to-end de MLOps para predecir el **valor medio de viviendas en Cali
 El proyecto cubre todo el ciclo de vida de un modelo de ML:
 
 ```
-Poetry → EDA → Pipeline → Cross-Validation → MLFlow → Parquet → Docker → FastAPI
+uv → EDA → Pipeline → Cross-Validation → MLFlow → Parquet → Docker → FastAPI
 ```
 
 ---
@@ -39,18 +39,20 @@ mlops/
 ├── retrain.py                  # 🔄 Reentrenamiento automático
 ├── eda.ipynb                   # 📊 Notebook de análisis exploratorio
 ├── 1553768847-housing.csv      # 📁 Dataset original
-├── pyproject.toml              # 📦 Dependencias (Poetry)
-├── poetry.lock                 # 🔒 Versiones exactas
+├── pyproject.toml              # 📦 Dependencias (uv)
+├── uv.lock                     # 🔒 Versiones exactas
+├── .python-version             # 🐍 Python 3.12
 ├── Dockerfile                  # 🐳 Imagen multi-stage
 ├── compose.yml                 # 🐳 Docker Compose (API + MLFlow)
 ├── model_metrics.json          # 📋 Métricas del modelo actual
 ├── tests/
-│   └── test_pipeline.py        # 🧪 11 tests unitarios
+│   └── test_pipeline.py        # 🧪 18 tests
 ├── .github/workflows/
-│   ├── ci_cd.yml               # ⚙️ CI/CD: test → train → docker
+│   ├── ci_cd.yml               # ⚙️ CI/CD: lint → train → tests → GitHub Pages
 │   └── retrain.yml             # 🔄 Reentrenamiento semanal
-├── presentacion_mlops.html     # 🎓 Presentación principal (Reveal.js)
-└── presentacion_mlops_avanzado.html  # 🎓 Presentación avanzada
+├── mlops.html                  # 🎓 Presentación 1: Intro a MLOps
+├── index.html                  # 🎓 Presentación 2: Pipeline práctico
+└── presentacion_mlops_avanzado.html  # 🎓 Presentación 3: MLOps avanzado
 ```
 
 ---
@@ -60,24 +62,36 @@ mlops/
 ### 1. Instalar dependencias
 
 ```bash
-# Instalar Poetry (si no lo tienes)
-pip install poetry
+# Instalar uv (si no lo tienes)
+curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux
+# Windows: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# Instalar dependencias del proyecto
-poetry install
+# Crear el entorno con las versiones exactas de uv.lock
+# (uv descarga Python 3.12 automáticamente si no lo tienes)
+uv sync
 ```
+
+`uv sync` instala tres grupos de dependencias:
+
+| Grupo | Contenido | Dónde se usa |
+|-------|-----------|--------------|
+| *(principal)* | pandas, scikit-learn, mlflow, fastapi, uvicorn, pyarrow | Siempre (también en Docker) |
+| `dev` | pytest, flake8, httpx2 | Tests y CI |
+| `eda` | jupyter, matplotlib, seaborn, nbformat | Notebook `eda.ipynb` |
+
+Para instalar solo lo necesario para producción: `uv sync --no-default-groups`.
 
 ### 2. Entrenar los modelos
 
 ```bash
-poetry run python train.py
+uv run python train.py
 ```
 
 Esto entrena **10 modelos de regresión** con **validación cruzada 5-Fold** y registra todo en MLFlow:
 
 | Modelo | RMSE Test ($) | CV RMSE μ ($) | CV σ ($) | R² |
 |--------|--------------|---------------|----------|------|
-| 🏆 **Gradient Boosting** | **48,077** | **48,383** | **950** | **0.8236** |
+| 🏆 **Gradient Boosting** | **48,107** | **48,323** | **1,006** | **0.8234** |
 | Random Forest | 48,942 | 49,262 | 624 | 0.8172 |
 | Extra Trees | 52,281 | 52,374 | 667 | 0.7914 |
 | KNN | 61,310 | 61,732 | 742 | 0.7132 |
@@ -91,14 +105,14 @@ Esto entrena **10 modelos de regresión** con **validación cruzada 5-Fold** y r
 ### 3. Ver experimentos en MLFlow
 
 ```bash
-poetry run mlflow ui
+uv run mlflow ui
 # Abre http://localhost:5000
 ```
 
 ### 4. Levantar la API
 
 ```bash
-poetry run uvicorn app:app --reload
+uv run uvicorn app:app --reload
 # Abre http://localhost:8000/docs para Swagger UI
 ```
 
@@ -122,6 +136,18 @@ curl -X POST http://localhost:8000/predict \
 
 ---
 
+## 🔁 De Poetry a uv
+
+| Poetry | uv |
+|--------|----|
+| `poetry install` | `uv sync` |
+| `poetry add pkg` | `uv add pkg` |
+| `poetry add --group dev pkg` | `uv add --dev pkg` |
+| `poetry run cmd` | `uv run cmd` |
+| `poetry.lock` | `uv.lock` |
+
+---
+
 ## 🔬 Análisis Exploratorio (EDA)
 
 El notebook `eda.ipynb` contiene **13 secciones** de análisis:
@@ -141,7 +167,7 @@ El notebook `eda.ipynb` contiene **13 secciones** de análisis:
 13. **Conclusiones** del análisis
 
 ```bash
-poetry run jupyter notebook eda.ipynb
+uv run jupyter notebook eda.ipynb
 ```
 
 ---
@@ -225,28 +251,36 @@ docker compose up -d
 docker compose logs -f api
 ```
 
-El Dockerfile usa **multi-stage build** para mantener la imagen ligera (~400MB vs ~1.5GB).
+El Dockerfile usa **multi-stage build**: el *builder* copia el binario de uv y crea `.venv` desde `uv.lock` (`uv sync --locked --no-default-groups`); la imagen final solo copia ese `.venv` y el código, sin Jupyter, pytest ni uv. Tamaño: ~1.3 GB en disco (282 MB comprimida).
+
+> Primero hay que entrenar (`uv run python train.py`), porque la imagen copia `best_model.pkl`.
 
 ---
 
 ## 🧪 Tests
 
 ```bash
-poetry run pytest tests/ -v
+uv run python train.py        # los tests necesitan best_model.pkl
+uv run pytest -v
+uv run flake8 *.py tests/ --max-line-length=120
 ```
 
-11 tests unitarios que cubren:
-- ✅ Feature Store (features derivadas, preprocesador, info)
-- ✅ Monitor (logging, drift normal, drift extremo, resumen)
-- ✅ Integridad de datos (CSV existe, columnas correctas, modelo existe)
+18 tests que cubren:
+- ✅ Feature Store (features derivadas, preprocesador, info) — 3
+- ✅ Monitor (logging, drift normal, drift extremo, resumen) — 5
+- ✅ Integridad de datos (CSV existe, columnas correctas, modelo existe) — 3
+- ✅ API (`/health`, `/predict` con el modelo de `train.py` y el de `retrain.py`, payload inválido → 422, drift) — 5
+- ✅ Serialización (los modelos se pueden guardar en MLflow con skops) — 2
 
 ---
 
 ## 🎓 Presentaciones
 
-Abrir en el navegador:
-- `presentacion_mlops.html` — Pipeline básico (EDA → Train → API)
-- `presentacion_mlops_avanzado.html` — Avanzado (CI/CD → Docker → Monitoreo)
+Se publican en GitHub Pages con cada push a `main`. Orden sugerido (cada una tiene una barra para saltar entre ellas):
+
+1. `mlops.html` — Intro a MLOps (conceptos, herramientas, MLflow, LLMOps)
+2. `index.html` — Pipeline práctico (uv → EDA → modelos → CV → MLflow → API)
+3. `presentacion_mlops_avanzado.html` — Avanzado (CI/CD → Docker → Monitoreo → Reentrenamiento → Feature Store)
 
 ---
 
@@ -254,7 +288,7 @@ Abrir en el navegador:
 
 | Categoría | Herramientas |
 |-----------|-------------|
-| **Entorno** | Poetry, pyproject.toml |
+| **Entorno** | uv, pyproject.toml, uv.lock |
 | **Exploración** | Pandas, Seaborn, Matplotlib, Jupyter |
 | **Modelado** | Scikit-Learn (10 modelos) |
 | **Validación** | Cross-Validation 5-Fold |

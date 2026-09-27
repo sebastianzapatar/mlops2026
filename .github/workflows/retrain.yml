@@ -21,19 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10
         with:
-          python-version: "3.12"
-
-      - name: Instalar Poetry
-        run: pip install poetry
+          enable-cache: true
 
       - name: Instalar dependencias
-        run: poetry install --no-interaction
+        run: uv sync --locked --no-default-groups
 
       - name: Ejecutar reentrenamiento
-        run: poetry run python retrain.py
+        run: uv run python retrain.py
 
       - name: Guardar modelo actualizado
         uses: actions/upload-artifact@v4

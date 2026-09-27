@@ -1,15 +1,11 @@
 """
 Tests unitarios para el pipeline de MLOps.
-Se ejecutan en CI/CD con: poetry run pytest tests/ -v
+Se ejecutan en CI/CD con: uv run pytest tests/ -v
 """
 
 import pytest
 import pandas as pd
-import numpy as np
 import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from feature_store import FeatureStore
 from monitor import ModelMonitor
@@ -111,3 +107,98 @@ class TestDataIntegrity:
     def test_model_exists(self):
         """Verifica que el modelo entrenado exista."""
         assert os.path.exists("best_model.pkl")
+
+
+# Payload de ejemplo (primera fila del dataset)
+SAMPLE_HOUSE = {
+    "longitude": -122.23,
+    "latitude": 37.88,
+    "housing_median_age": 41,
+    "total_rooms": 880,
+    "total_bedrooms": 129,
+    "population": 322,
+    "households": 126,
+    "median_income": 8.3252,
+    "ocean_proximity": "NEAR BAY",
+}
+
+
+def _small_pipeline(model, preprocessor, with_derived=False, n=500):
+    """Entrena un pipeline pequeño y rápido sobre una muestra del dataset."""
+    from sklearn.pipeline import Pipeline
+
+    df = pd.read_csv("1553768847-housing.csv").sample(n, random_state=0)
+    if with_derived:
+        df = FeatureStore().add_derived_features(df)
+    X, y = df.drop("median_house_value", axis=1), df["median_house_value"]
+    return Pipeline([("preprocessor", preprocessor), ("model", model)]).fit(X, y)
+
+
+class TestAPI:
+    """Tests de la API FastAPI (sin levantar el servidor)."""
+
+    @pytest.fixture
+    def client(self):
+        from fastapi.testclient import TestClient
+        import app
+
+        return TestClient(app.app)
+
+    def test_health(self, client):
+        response = client.get("/health")
+        assert response.status_code == 200
+        assert response.json()["status"] == "healthy"
+
+    def test_predict(self, client):
+        """El modelo de train.py predice un valor positivo."""
+        response = client.post("/predict", json=SAMPLE_HOUSE)
+        assert response.status_code == 200
+        assert response.json()["predicted_median_house_value"] > 0
+
+    def test_predict_with_retrained_model(self, client, monkeypatch):
+        """El modelo de retrain.py (con features derivadas) también funciona en la API."""
+        from sklearn.ensemble import GradientBoostingRegressor
+        import app
+
+        retrained = _small_pipeline(
+            GradientBoostingRegressor(n_estimators=10, random_state=42),
+            FeatureStore().build_preprocessor(),
+            with_derived=True,
+        )
+        monkeypatch.setattr(app, "model", retrained)
+        response = client.post("/predict", json=SAMPLE_HOUSE)
+        assert response.status_code == 200
+        assert response.json()["predicted_median_house_value"] > 0
+
+    def test_predict_invalid_payload(self, client):
+        """Pydantic rechaza datos incompletos con 422."""
+        response = client.post("/predict", json={"longitude": -122.23})
+        assert response.status_code == 422
+
+    def test_check_drift_endpoint(self, client):
+        extreme = {**SAMPLE_HOUSE, "median_income": 999.0}
+        response = client.post("/monitor/check-drift", json=extreme)
+        assert response.json()["has_drift"] is True
+
+
+class TestModelSerialization:
+    """Los modelos deben poder guardarse en MLflow con skops."""
+
+    @pytest.mark.parametrize("model_name", ["tree", "knn"])
+    def test_skops_trusted_types(self, model_name):
+        """Si una actualización agrega tipos nuevos, este test avisa antes que train.py."""
+        import skops.io as sio
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.neighbors import KNeighborsRegressor
+        from train import SKOPS_TRUSTED_TYPES, preprocess_and_split
+
+        df = pd.read_csv("1553768847-housing.csv").sample(500, random_state=0)
+        *_, preprocessor = preprocess_and_split(df)
+        model = {
+            "tree": RandomForestRegressor(n_estimators=5, random_state=42),
+            "knn": KNeighborsRegressor(),
+        }[model_name]
+        pipeline = _small_pipeline(model, preprocessor)
+
+        untrusted = sio.get_untrusted_types(data=sio.dumps(pipeline))
+        assert set(untrusted) <= set(SKOPS_TRUSTED_TYPES)

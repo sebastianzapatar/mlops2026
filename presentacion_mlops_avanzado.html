@@ -29,10 +29,13 @@
 .pf{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:20px 0}
 .ps{background:#fff;border:2px solid var(--gc);border-radius:8px;padding:10px 14px;text-align:center;font-size:.6em;font-weight:600;color:var(--go);min-width:100px}
 .ps.a{background:var(--v);color:#fff;border-color:var(--v)}.pa{font-size:1.2em;color:var(--gc)}
-.ft{position:fixed;bottom:12px;right:20px;font-size:.45em;color:var(--g);font-weight:600}
+.ft{position:fixed;bottom:12px;left:20px;font-size:.45em;color:var(--g);font-weight:600}
 .ts{text-align:center}.ts h1{font-size:2em;color:var(--v);margin-bottom:.1em}.ts .sub{font-size:.9em;color:var(--go);font-weight:600}.ts .meta{font-size:.65em;color:var(--g);margin-top:1.5em}
-.nav-btn{position:fixed;top:12px;left:20px;z-index:100;background:var(--vl);color:#fff;padding:8px 16px;border-radius:20px;text-decoration:none;font-size:.55em;font-weight:600;font-family:'Inter',sans-serif;transition:background .3s,transform .2s;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.nav-btn:hover{background:var(--v);transform:scale(1.05)}
+.deck-nav{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 4px 14px rgba(0,0,0,.14);font-family:'Inter',system-ui,sans-serif}
+.deck-nav a{padding:6px 14px;border-radius:999px;color:#012237;text-decoration:none;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;transition:background .2s,color .2s}
+.deck-nav a:hover{background:#EAF2FB}
+.deck-nav a[aria-current="page"]{background:#0C5ADB;color:#fff}
+@media print{.deck-nav{display:none}}
 </style>
 </head>
 <body>
@@ -41,7 +44,7 @@
 <!-- Portada -->
 <section>
 <div class="ts">
-<img src="eia_logo.webp" alt="Universidad EIA" style="height:80px; margin-bottom:10px;">
+<img src="eia_logo.webp" alt="Universidad EIA" style="background:#012237;padding:10px 18px;border-radius:12px;height:80px; margin-bottom:10px;">
 <p style="font-size:.7em;color:var(--go);letter-spacing:2px;margin-bottom:0">UNIVERSIDAD EIA</p>
 <h1>MLOps Avanzado</h1>
 <p class="sub">CI/CD · Docker · Monitoreo · Reentrenamiento · Feature Store</p>
@@ -60,7 +63,7 @@
 <div class="c"><h4><span class="sn">3</span> Monitoreo en Producción</h4><p>Data drift, logging de predicciones y alertas.</p></div>
 <div class="c"><h4><span class="sn">4</span> Reentrenamiento Automático</h4><p>Pipeline programado con comparación de modelos.</p></div>
 <div class="c"><h4><span class="sn">5</span> Feature Store</h4><p>Centralización y versionado de features.</p></div>
-<div class="c"><h4><span class="sn">6</span> Tests y Calidad</h4><p>11 tests unitarios para el pipeline completo.</p></div>
+<div class="c"><h4><span class="sn">6</span> Tests y Calidad</h4><p>18 tests: pipeline, API y serialización del modelo.</p></div>
 </div>
 </section>
 
@@ -68,13 +71,14 @@
 <section>
 <div class="sh">SECCIÓN 1</div>
 <h2><span class="sn">1</span> CI/CD con GitHub Actions</h2>
-<div class="c" style="text-align:center"><p style="font-size:.8em"><strong>Continuous Integration / Continuous Deployment</strong> automatiza el ciclo: cada push dispara tests, entrenamiento y despliegue.</p></div>
+<div class="c" style="text-align:center"><p style="font-size:.8em"><strong>Continuous Integration / Continuous Deployment</strong> automatiza el ciclo: cada push instala el entorno, revisa el código, entrena, prueba y publica.</p></div>
 <div class="pf">
 <div class="ps a">git push</div><span class="pa">→</span>
-<div class="ps a">🧪 Tests</div><span class="pa">→</span>
+<div class="ps a">📦 uv sync</div><span class="pa">→</span>
+<div class="ps a">🔍 Lint</div><span class="pa">→</span>
 <div class="ps a">🤖 Train</div><span class="pa">→</span>
-<div class="ps a">🐳 Docker</div><span class="pa">→</span>
-<div class="ps a">🚀 Deploy</div>
+<div class="ps a">🧪 Tests</div><span class="pa">→</span>
+<div class="ps a">🌐 Deploy Pages</div>
 </div>
 <p style="text-align:center;font-size:.65em;color:var(--g)">Archivo: <code>.github/workflows/ci_cd.yml</code></p>
 </section>
@@ -82,11 +86,11 @@
 <!-- CI/CD Jobs -->
 <section>
 <div class="sh">SECCIÓN 1</div>
-<h2>3 Jobs del Pipeline CI/CD</h2>
+<h2>Jobs del Pipeline CI/CD</h2>
 <div class="g3">
-<div class="c"><h4>🧪 Job 1: Test</h4><p>• Instala Poetry<br>• Lint con flake8<br>• Ejecuta pytest (11 tests)<br>• Falla el pipeline si hay errores</p></div>
-<div class="c"><h4>🤖 Job 2: Train</h4><p>• Depende de que tests pasen<br>• Ejecuta <code>train.py</code><br>• Sube artefactos (modelo, parquet, mlruns)</p></div>
-<div class="c"><h4>🐳 Job 3: Docker</h4><p>• Solo en rama <code>main</code><br>• Build de imagen Docker<br>• Push a Docker Hub con tag latest + SHA</p></div>
+<div class="c"><h4>🧪 Job 1: Tests &amp; Lint</h4><p>• Instala uv (<code>setup-uv</code>)<br>• <code>uv sync --locked</code><br>• Lint con flake8<br>• Entrena con <code>train.py</code><br>• Ejecuta pytest (18 tests)</p></div>
+<div class="c"><h4>🌐 Job 2: Deploy Pages</h4><p>• Depende de que el Job 1 pase<br>• Solo en rama <code>main</code><br>• Publica estas presentaciones en GitHub Pages</p></div>
+<div class="c" style="border-left-style:dashed;"><h4>🐳 Siguiente paso (propuesto)</h4><p>• Build de la imagen Docker<br>• Push a un registry (GHCR / Docker Hub)<br>• Tag <code>latest</code> + SHA del commit</p></div>
 </div>
 <pre><code class="language-yaml">on:
   push:
@@ -106,23 +110,19 @@
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install poetry
-      - run: poetry install --no-interaction
-      - run: poetry run flake8 *.py --max-line-length=120
-      - run: poetry run pytest tests/ -v
+      - uses: astral-sh/setup-uv@v10      # instala uv
+        with: { enable-cache: true }
+      - run: uv sync --locked --no-group eda  # Python 3.12 + deps
+      - run: uv run flake8 *.py tests/ --max-line-length=120
+      - run: uv run python train.py
+      - run: uv run pytest tests/ -v --tb=short
 
-  train:
+  deploy-pages:
     needs: test
+    if: github.ref == 'refs/heads/main'
     steps:
-      - run: poetry run python train.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: model-artifacts
-          path: |
-            best_model.pkl
-            test_predictions.parquet</code></pre>
+      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/deploy-pages@v4</code></pre>
 </section>
 
 <!-- Docker Intro -->
@@ -136,9 +136,10 @@
 • <strong>Escalabilidad:</strong> Kubernetes, ECS, Cloud Run<br>
 • <strong>Reproducibilidad:</strong> Mismo entorno siempre</p></div>
 <div class="c"><h4>Arquitectura Multi-Stage</h4>
-<p>• <strong>Stage 1 (Builder):</strong> Instala Poetry, exporta requirements<br>
-• <strong>Stage 2 (Runner):</strong> Imagen slim solo con lo necesario<br>
-• Resultado: imagen ~400MB en lugar de ~1.5GB</p></div>
+<p>• <strong>Stage 1 (Builder):</strong> copia el binario de uv y crea <code>.venv</code> desde <code>uv.lock</code><br>
+• <strong>Stage 2 (Runner):</strong> imagen slim que solo copia el <code>.venv</code> y el código<br>
+• Sin Jupyter, pytest ni uv en producción<br>
+• Resultado: ~1.3 GB en disco (282 MB comprimida); el peso lo ponen scikit-learn, pandas, pyarrow y MLflow</p></div>
 </div>
 </section>
 
@@ -148,23 +149,24 @@
 <h2>Dockerfile Multi-Stage</h2>
 <pre><code class="language-dockerfile"># Stage 1: Builder
 FROM python:3.12-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/uv
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 WORKDIR /app
-RUN pip install --no-cache-dir poetry
-COPY pyproject.toml poetry.lock ./
-RUN poetry export -f requirements.txt --without-hashes -o requirements.txt
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --locked --no-default-groups   # sin dev ni eda
 
 # Stage 2: Runner
 FROM python:3.12-slim AS runner
 WORKDIR /app
-COPY --from=builder /app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --from=builder /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
 COPY app.py monitor.py feature_store.py best_model.pkl ./
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
 </section>
 
 <!-- Docker Compose -->
@@ -267,7 +269,7 @@ CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
 <div class="c" style="text-align:center"><h4>¿Cuándo reentrenar?</h4>
 <p>• <strong>Programado:</strong> Cada lunes a las 6 AM (cron en GitHub Actions)<br>
 • <strong>Manual:</strong> Desde la UI de GitHub con workflow_dispatch<br>
-• <strong>Por drift:</strong> Cuando el monitor detecta degradación</p></div>
+• <strong>Por drift:</strong> el monitor registra la alerta en los logs → se lanza el workflow (hoy de forma manual)</p></div>
 <div class="pf">
 <div class="ps a">Datos nuevos</div><span class="pa">→</span>
 <div class="ps a">Feature Store</div><span class="pa">→</span>
@@ -320,9 +322,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: pip install poetry
-      - run: poetry install --no-interaction
-      - run: poetry run python retrain.py
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --locked --no-default-groups
+      - run: uv run python retrain.py
       - run: |
           git config user.name "GitHub Actions Bot"
           git add model_metrics.json feature_store/
@@ -339,7 +341,7 @@ jobs:
 <div class="g3">
 <div class="c"><h4>📋 Definición</h4><p>8 numéricas, 1 categórica, 3 derivadas definidas en un solo lugar.</p></div>
 <div class="c"><h4>🔄 Versionado</h4><p>Cada conjunto de features se guarda como Parquet con metadatos JSON.</p></div>
-<div class="c"><h4>🧮 Features Derivadas</h4><p>rooms_per_household, bedrooms_per_room, population_per_household.</p></div>
+<div class="c"><h4>🧮 Features Derivadas</h4><p>rooms_per_household, bedrooms_per_room, population_per_household. Se calculan igual en <code>retrain.py</code> y en la API.</p></div>
 </div>
 </section>
 
@@ -374,19 +376,33 @@ jobs:
 <section>
 <div class="sh">SECCIÓN 6</div>
 <h2><span class="sn">6</span> Tests Unitarios</h2>
-<pre><code class="language-bash">$ poetry run pytest tests/ -v
-tests/test_pipeline.py::TestFeatureStore::test_derived_features     PASSED
-tests/test_pipeline.py::TestFeatureStore::test_preprocessor_creation PASSED
-tests/test_pipeline.py::TestFeatureStore::test_feature_info         PASSED
-tests/test_pipeline.py::TestMonitor::test_log_prediction            PASSED
-tests/test_pipeline.py::TestMonitor::test_drift_detection_normal    PASSED
-tests/test_pipeline.py::TestMonitor::test_drift_detection_extreme   PASSED
-tests/test_pipeline.py::TestMonitor::test_summary_empty             PASSED
-tests/test_pipeline.py::TestMonitor::test_summary_with_data         PASSED
-tests/test_pipeline.py::TestDataIntegrity::test_csv_exists          PASSED
-tests/test_pipeline.py::TestDataIntegrity::test_csv_columns         PASSED
-tests/test_pipeline.py::TestDataIntegrity::test_model_exists        PASSED
-============================== 11 passed in 0.88s =============</code></pre>
+<div class="g2">
+<div>
+<pre><code class="language-bash">$ uv run pytest tests/ -v
+TestFeatureStore::test_derived_features       PASSED
+TestMonitor::test_drift_detection_extreme     PASSED
+TestDataIntegrity::test_model_exists          PASSED
+TestAPI::test_predict                         PASSED
+TestAPI::test_predict_with_retrained_model    PASSED
+TestAPI::test_predict_invalid_payload         PASSED
+TestModelSerialization::test_skops_trusted_types[knn] PASSED
+...
+============= 18 passed in 2.27s =============</code></pre>
+</div>
+<div>
+<table style="width:100%;font-size:.55em;border-collapse:collapse">
+<thead><tr><th style="background:var(--v);color:#fff;padding:6px 10px;text-align:left">Grupo</th><th style="background:var(--v);color:#fff;padding:6px 10px">#</th><th style="background:var(--v);color:#fff;padding:6px 10px;text-align:left">Qué verifica</th></tr></thead>
+<tbody>
+<tr><td style="padding:6px 10px">Feature Store</td><td>3</td><td>Features derivadas, preprocesador, info</td></tr>
+<tr><td style="padding:6px 10px">Monitor</td><td>5</td><td>Logging, drift normal/extremo, resumen</td></tr>
+<tr><td style="padding:6px 10px">Datos</td><td>3</td><td>CSV, columnas, modelo entrenado</td></tr>
+<tr><td style="padding:6px 10px">API</td><td>5</td><td>/health, /predict (ambos modelos), 422, drift</td></tr>
+<tr><td style="padding:6px 10px">Serialización</td><td>2</td><td>Los modelos se guardan en MLflow (skops)</td></tr>
+</tbody>
+</table>
+<div class="c"><h4>💡 Tests que atrapan bugs reales</h4><p>La API fallaba con el modelo de <code>retrain.py</code> y MLflow no podía guardar los modelos: ahora hay un test para cada caso.</p></div>
+</div>
+</div>
 </section>
 
 <!-- Estructura -->
@@ -395,10 +411,10 @@ tests/test_pipeline.py::TestDataIntegrity::test_model_exists        PASSED
 <h2>Estructura Completa del Proyecto</h2>
 <pre><code class="language-text">mlops/
 ├── .github/workflows/
-│   ├── ci_cd.yml               # CI/CD: test → train → docker
+│   ├── ci_cd.yml               # CI/CD: lint → train → tests → Pages
 │   └── retrain.yml             # Reentrenamiento programado
 ├── tests/
-│   └── test_pipeline.py        # 11 tests unitarios
+│   └── test_pipeline.py        # 18 tests
 ├── feature_store/              # Versiones de features (parquet)
 ├── logs/                       # Logs de predicciones
 ├── train.py                    # Entrenamiento (10 modelos)
@@ -406,9 +422,9 @@ tests/test_pipeline.py::TestDataIntegrity::test_model_exists        PASSED
 ├── app.py                      # API FastAPI + monitoreo
 ├── monitor.py                  # Data drift + logging
 ├── feature_store.py            # Feature Store centralizado
-├── Dockerfile                  # Imagen multi-stage
-├── docker-compose.yml          # API + MLFlow
-├── pyproject.toml              # Dependencias (Poetry)
+├── Dockerfile                  # Imagen multi-stage con uv
+├── compose.yml                 # API + MLflow
+├── pyproject.toml + uv.lock    # Dependencias (uv)
 └── best_model.pkl              # Modelo en producción</code></pre>
 </section>
 
@@ -417,7 +433,7 @@ tests/test_pipeline.py::TestDataIntegrity::test_model_exists        PASSED
 <div class="sh">CONCLUSIÓN</div>
 <h2>Pipeline MLOps Completo</h2>
 <div class="pf">
-<div class="ps a">Poetry</div><span class="pa">→</span>
+<div class="ps a">uv</div><span class="pa">→</span>
 <div class="ps a">Feature Store</div><span class="pa">→</span>
 <div class="ps a">Train</div><span class="pa">→</span>
 <div class="ps a">MLFlow</div><span class="pa">→</span>
@@ -428,7 +444,7 @@ tests/test_pipeline.py::TestDataIntegrity::test_model_exists        PASSED
 </div>
 <div class="g2">
 <div class="c"><h4>✅ Implementado</h4>
-<p>• CI/CD con 3 jobs en GitHub Actions<br>• Docker multi-stage + Compose<br>• Monitoreo con data drift (z-score)<br>• Reentrenamiento semanal automático<br>• Feature Store con versionado<br>• 11 tests unitarios</p></div>
+<p>• CI/CD en GitHub Actions: lint, tests y deploy<br>• Docker multi-stage + Compose<br>• Monitoreo con data drift (z-score)<br>• Reentrenamiento semanal automático<br>• Feature Store con versionado<br>• 18 tests (pipeline, API, serialización)</p></div>
 <div class="c"><h4>🎯 Beneficios</h4>
 <p>• Despliegue sin intervención manual<br>• Modelo siempre actualizado<br>• Detección temprana de degradación<br>• Features consistentes train/serve<br>• Trazabilidad completa<br>• Entorno reproducible</p></div>
 </div>
@@ -436,8 +452,7 @@ tests/test_pipeline.py::TestDataIntegrity::test_model_exists        PASSED
 </section>
 
 </div></div>
-<a href="index.html" class="nav-btn">← Parte 1: Pipeline</a>
-<a href="mlops.html" class="nav-btn" style="left:auto;right:20px;">Intro: MLOps →</a>
+<nav class="deck-nav" aria-label="Presentaciones del curso"><a href="mlops.html">① Intro MLOps</a><a href="index.html">② Pipeline práctico</a><a href="presentacion_mlops_avanzado.html" aria-current="page">③ MLOps avanzado</a></nav>
 <div class="ft">Universidad EIA · MLOps Avanzado</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
