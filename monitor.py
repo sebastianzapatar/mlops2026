@@ -1,11 +1,7 @@
-"""
-monitor.py - Sistema de Monitoreo del Modelo en Producción
-==========================================================
-Este módulo implementa:
-- Detección de Data Drift (cambio en la distribución de datos)
-- Logging de predicciones para auditoría
-- Métricas de rendimiento en tiempo real
-- Alertas cuando el modelo se degrada
+"""Diagnóstico básico de entradas y resumen de predicciones del proceso.
+
+El z-score identifica valores individuales atípicos frente al CSV de referencia;
+no compara distribuciones ni mide degradación del rendimiento del modelo.
 """
 
 import pandas as pd
@@ -29,23 +25,15 @@ logger = logging.getLogger("ModelMonitor")
 
 
 class ModelMonitor:
-    """
-    Monitor de modelo en producción.
+    """Guarda predicciones en memoria y alerta sobre entradas atípicas."""
 
-    Registra cada predicción, detecta data drift comparando
-    las distribuciones de entrada contra los datos de entrenamiento,
-    y genera alertas cuando el comportamiento cambia.
-    """
+    Z_SCORE_THRESHOLD = 3
 
     def __init__(self, reference_data_path: str = "1553768847-housing.csv"):
-        """
-        Inicializa el monitor cargando los datos de referencia
-        (distribución original del entrenamiento).
-        """
+        """Calcula media y desviación de columnas numéricas de referencia."""
         self.predictions_log = []
-        self.alert_threshold = 0.3  # Umbral de drift (30%)
 
-        # Cargar estadísticas de referencia del dataset original
+        # La columna objetivo también está en el CSV, pero no en la entrada.
         os.makedirs("logs", exist_ok=True)
         try:
             ref_data = pd.read_csv(reference_data_path)
@@ -76,11 +64,11 @@ class ModelMonitor:
         }
         self.predictions_log.append(record)
 
-        # Guardar en archivo cada 100 predicciones
+        # Persistir por lotes reduce escrituras; el lote pendiente vive en memoria.
         if len(self.predictions_log) % 100 == 0:
             self._flush_logs()
 
-        # Verificar drift en cada predicción
+        # Esta comprobación es por registro; una alerta no prueba drift poblacional.
         drift_report = self.check_drift(input_data)
         if drift_report["has_drift"]:
             logger.warning(
@@ -91,11 +79,10 @@ class ModelMonitor:
 
     def check_drift(self, input_data: dict) -> dict:
         """
-        Verifica si los datos de entrada se desvían significativamente
-        de la distribución de referencia (entrenamiento).
+        Marca entradas con |valor - media| / desviación > 3.
 
-        Usa el z-score: si |valor - media| > threshold * std,
-        se considera drift.
+        El nombre del método se mantiene por compatibilidad con la API, aunque
+        esta regla detecta valores atípicos y no drift de una distribución.
 
         Args:
             input_data: Diccionario con las características de entrada.
@@ -108,7 +95,7 @@ class ModelMonitor:
         for feature, stats in self.reference_stats.items():
             if feature in input_data and stats["std"] > 0:
                 z_score = abs(input_data[feature] - stats["mean"]) / stats["std"]
-                if z_score > 3:  # Más de 3 desviaciones estándar
+                if z_score > self.Z_SCORE_THRESHOLD:
                     drifted.append(
                         {"feature": feature, "z_score": round(z_score, 2)}
                     )
@@ -121,7 +108,7 @@ class ModelMonitor:
 
     def get_summary(self) -> dict:
         """
-        Retorna un resumen de las predicciones realizadas.
+        Retorna un resumen de las predicciones de este proceso.
 
         Returns:
             dict con estadísticas de predicciones, predicción promedio,

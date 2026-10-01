@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+"""API de inferencia: valida entradas y expone predicción y diagnóstico."""
+
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import joblib
 import pandas as pd
@@ -12,19 +14,20 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# Cargar el modelo entrenado
+# Se carga una vez al importar el módulo; hay que reiniciar para usar otro modelo.
 try:
     model = joblib.load("best_model.pkl")
 except Exception as e:
     model = None
     print(f"Error cargando el modelo: {e}")
 
-# Inicializar monitor y feature store
+# Ambos objetos viven en memoria durante el proceso de la API.
 monitor = ModelMonitor()
 feature_store = FeatureStore()
 
 
 class HousingData(BaseModel):
+    """Columnas originales que requiere el modelo de viviendas."""
     longitude: float
     latitude: float
     housing_median_age: float
@@ -38,7 +41,9 @@ class HousingData(BaseModel):
 
 @app.get("/health")
 def health():
-    """Endpoint de salud para Docker healthcheck y load balancers."""
+    """Indica si el proceso está listo para servir predicciones."""
+    if model is None:
+        raise HTTPException(status_code=503, detail="El modelo no está disponible.")
     return {
         "status": "healthy",
         "model_loaded": model is not None,
@@ -48,17 +53,17 @@ def health():
 @app.post("/predict")
 def predict(data: HousingData):
     """Predice el valor de una vivienda y registra la predicción en el monitor."""
-    if not model:
-        return {"error": "El modelo no está disponible."}
+    if model is None:
+        raise HTTPException(status_code=503, detail="El modelo no está disponible.")
 
     # Convertir el payload a DataFrame y agregar las features derivadas del
     # Feature Store (el modelo de retrain.py las necesita; el de train.py las ignora)
     input_data = feature_store.add_derived_features(pd.DataFrame([data.model_dump()]))
 
-    # Predecir
+    # La salida de sklearn es un arreglo incluso para una sola vivienda.
     prediction = model.predict(input_data)[0]
 
-    # Registrar en el monitor (data drift + logging)
+    # El monitor conserva la entrada original y avisa sobre valores atípicos.
     monitor.log_prediction(data.model_dump(), float(prediction))
 
     return {"predicted_median_house_value": float(prediction)}
@@ -72,7 +77,7 @@ def monitor_summary():
 
 @app.post("/monitor/check-drift")
 def check_drift(data: HousingData):
-    """Verifica si los datos de entrada presentan data drift."""
+    """Señala valores numéricos alejados de la referencia de entrenamiento."""
     return monitor.check_drift(data.model_dump())
 
 

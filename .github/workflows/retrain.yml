@@ -8,11 +8,6 @@ on:
   schedule:
     - cron: "0 6 * * 1"  # Cada lunes a las 6 AM UTC
   workflow_dispatch:
-    inputs:
-      force:
-        description: "Forzar reentrenamiento aunque no haya mejora"
-        required: false
-        default: "false"
 
 jobs:
   retrain:
@@ -32,7 +27,9 @@ jobs:
       - name: Ejecutar reentrenamiento
         run: uv run python retrain.py
 
-      - name: Guardar modelo actualizado
+      # El modelo está excluido de Git: el resultado se entrega como artefacto
+      # para revisión y despliegue explícito; este job no actualiza la API.
+      - name: Guardar resultado del reentrenamiento
         uses: actions/upload-artifact@v4
         with:
           name: retrained-model
@@ -40,11 +37,3 @@ jobs:
             best_model.pkl
             model_metrics.json
             feature_store/
-
-      - name: Commit si hubo cambio de modelo
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          git add model_metrics.json feature_store/
-          git diff --staged --quiet || git commit -m "🤖 Auto-retrain: modelo actualizado $(date +%Y-%m-%d)"
-          git push || echo "No hay cambios para push"

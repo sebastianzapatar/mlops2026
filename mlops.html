@@ -89,10 +89,27 @@ with mlflow.start_run():
 <div class="nav"><button onclick="prev()">←</button><button onclick="next()">→</button></div>
 <nav class="deck-nav" aria-label="Presentaciones del curso"><a href="mlops.html" aria-current="page">① Intro MLOps</a><a href="index.html">② Pipeline práctico</a><a href="presentacion_mlops_avanzado.html">③ MLOps avanzado</a></nav>
 <script>
-  const slides=[...document.querySelectorAll('.slide')]; let idx=0;
-  function show(i){idx=Math.max(0,Math.min(i,slides.length-1));slides.forEach((s,n)=>s.classList.toggle('active',n===idx));document.getElementById('counter').textContent=`${idx+1} / ${slides.length}`;document.getElementById('progress').style.width=`${((idx+1)/slides.length)*100}%`;}
-  function next(){show(idx+1)} function prev(){show(idx-1)}
-  document.addEventListener('keydown',e=>{if(['ArrowRight','PageDown',' '].includes(e.key))next(); if(['ArrowLeft','PageUp'].includes(e.key))prev();}); show(0);
+  // Solo una diapositiva está visible; idx guarda su posición actual.
+  const slides = [...document.querySelectorAll('.slide')];
+  let idx = 0;
+
+  function show(i) {
+    // Limitar el índice permite reutilizar esta función desde botones y teclado.
+    idx = Math.max(0, Math.min(i, slides.length - 1));
+    slides.forEach((slide, position) => slide.classList.toggle('active', position === idx));
+    document.getElementById('counter').textContent = `${idx + 1} / ${slides.length}`;
+    document.getElementById('progress').style.width = `${((idx + 1) / slides.length) * 100}%`;
+  }
+
+  function next() { show(idx + 1); }
+  function prev() { show(idx - 1); }
+
+  // Los botones llaman a next/prev; estas teclas ofrecen la misma navegación.
+  document.addEventListener('keydown', event => {
+    if (['ArrowRight', 'PageDown', ' '].includes(event.key)) next();
+    if (['ArrowLeft', 'PageUp'].includes(event.key)) prev();
+  });
+  show(0);
 </script>
 </body>
 </html>

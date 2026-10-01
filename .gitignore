@@ -18,6 +18,9 @@ mlflow.db
 # Modelo serializado (se regenera con train.py)
 best_model.pkl
 
+# Pipelines PyCaret exportados desde el notebook
+models/
+
 # Predicciones (se regeneran)
 test_predictions.parquet
 
@@ -27,6 +30,7 @@ feature_store/*.json
 
 # Logs
 logs/
+logs.log
 
 # IDE
 .vscode/

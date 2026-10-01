@@ -31,6 +31,11 @@ eda = [
     "nbformat>=5.10.4,<6.0.0",
     "sweetviz>=2.3.3",
 ]
+# PyCaret 4 usa la API orientada a objetos y requiere habilitar su prerelease.
+# Solo el notebook de entrenamiento necesita este grupo; la API carga sklearn.
+pycaret = [
+    "pycaret==4.0.0a8",
+]
 
 [tool.uv]
 # Es una aplicación (scripts), no una librería: no se empaqueta ni se instala a sí misma

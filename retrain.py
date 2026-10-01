@@ -1,18 +1,8 @@
-"""
-retrain.py - Sistema de Reentrenamiento Automático
-====================================================
-Este script puede ejecutarse:
-- Manualmente: uv run python retrain.py
-- Por GitHub Actions: workflow_dispatch o schedule
-- Por el monitor: cuando detecta data drift significativo
+"""Reentrena Gradient Boosting manualmente o mediante GitHub Actions.
 
-Flujo:
-1. Carga los datos más recientes
-2. Usa el Feature Store para transformar
-3. Reentrena el mejor modelo (Gradient Boosting)
-4. Compara con el modelo actual
-5. Solo reemplaza si el nuevo es mejor
-6. Registra todo en MLFlow
+El monitor solo emite alertas; no invoca este script. La comparación con
+model_metrics.json es válida como referencia local para el mismo conjunto de
+evaluación, pero no sustituye una evaluación con datos nuevos e independientes.
 """
 
 import pandas as pd
@@ -36,12 +26,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AutoRetrain")
 
 
-def load_current_model_metrics() -> dict:
+def load_current_model_metrics() -> dict | None:
     """
     Carga las métricas del modelo actualmente en producción.
 
     Returns:
-        dict con rmse y r2 del modelo actual, o None si no existe.
+        Métricas del modelo actual o None si no existe el archivo.
     """
     metrics_path = "model_metrics.json"
     if os.path.exists(metrics_path):
@@ -64,9 +54,9 @@ def retrain(data_path: str = "1553768847-housing.csv"):
     1. Inicializa el Feature Store
     2. Carga y transforma datos con features derivadas
     3. Divide en entrenamiento/prueba
-    4. Entrena Gradient Boosting con hiperparámetros optimizados
-    5. Compara con el modelo actual
-    6. Reemplaza solo si el nuevo modelo es mejor
+    4. Entrena Gradient Boosting con hiperparámetros fijos
+    5. Compara el RMSE con la referencia guardada, si hay modelo local
+    6. Reemplaza el archivo local cuando el RMSE disminuye
     7. Registra todo en MLFlow
     """
     logger.info("=" * 60)
@@ -86,13 +76,13 @@ def retrain(data_path: str = "1553768847-housing.csv"):
     df = fs.add_derived_features(df)
     logger.info(f"Features derivadas agregadas. Total columnas: {df.shape[1]}")
 
-    # 4. Registrar versión en el Feature Store
+    # La versión permite identificar los datos usados por esta ejecución.
     version_id = fs.register_version(
         df, description=f"Reentrenamiento automático {datetime.now().isoformat()}"
     )
     logger.info(f"Features registradas como versión: {version_id}")
 
-    # 5. Separar features y target
+    # El mismo random_state produce una partición reproducible.
     X = df.drop(fs.TARGET, axis=1)
     y = df[fs.TARGET]
 
@@ -100,7 +90,7 @@ def retrain(data_path: str = "1553768847-housing.csv"):
         X, y, test_size=0.2, random_state=42
     )
 
-    # 6. Construir pipeline con Feature Store
+    # El preprocesador se ajusta solo con X_train dentro del pipeline.
     preprocessor = fs.build_preprocessor()
     pipeline = Pipeline(
         steps=[
@@ -122,7 +112,7 @@ def retrain(data_path: str = "1553768847-housing.csv"):
     pipeline.fit(X_train, y_train)
     predictions = pipeline.predict(X_test)
 
-    # 8. Calcular métricas
+    # Las métricas describen únicamente el holdout de esta ejecución.
     rmse = float(np.sqrt(mean_squared_error(y_test, predictions)))
     mae = float(mean_absolute_error(y_test, predictions))
     r2 = float(r2_score(y_test, predictions))
@@ -138,7 +128,7 @@ def retrain(data_path: str = "1553768847-housing.csv"):
 
     logger.info(f"Nuevo modelo - RMSE: {rmse:,.2f} | MAE: {mae:,.2f} | R²: {r2:.4f}")
 
-    # 9. Registrar en MLFlow
+    # MLflow conserva tanto parámetros como modelo de cada ejecución.
     mlflow.set_experiment("California_Housing_Retrain")
     with mlflow.start_run(run_name=f"retrain_{version_id}"):
         mlflow.log_param("model_type", "GradientBoosting")
@@ -156,10 +146,10 @@ def retrain(data_path: str = "1553768847-housing.csv"):
             pipeline, name="model", skops_trusted_types=SKOPS_TRUSTED_TYPES
         )
 
-    # 10. Comparar con modelo actual
+    # No se puede mantener un modelo anterior si su archivo no existe.
     current_metrics = load_current_model_metrics()
 
-    if current_metrics is None:
+    if current_metrics is None or not os.path.exists("best_model.pkl"):
         logger.info("No hay modelo previo. Guardando nuevo modelo.")
         joblib.dump(pipeline, "best_model.pkl")
         save_model_metrics(new_metrics)

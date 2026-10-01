@@ -1,11 +1,7 @@
-"""
-feature_store.py - Feature Store Centralizado
-==============================================
-Este módulo implementa un Feature Store local que:
-- Centraliza las transformaciones de datos
-- Versiona los conjuntos de features
-- Permite reutilizar features entre entrenamiento y serving
-- Garantiza consistencia entre el pipeline de training y la API
+"""Define features derivadas y guarda instantáneas locales en Parquet.
+
+El preprocesador se usa al reentrenar; la API agrega las mismas columnas
+derivadas antes de inferir. Las versiones son archivos locales, no un servicio.
 """
 
 import pandas as pd
@@ -23,20 +19,12 @@ logger = logging.getLogger("FeatureStore")
 
 
 class FeatureStore:
-    """
-    Feature Store centralizado para el proyecto de Housing.
-
-    Responsabilidades:
-    - Definir y almacenar features de forma centralizada
-    - Versionar transformaciones para reproducibilidad
-    - Servir features consistentes para training y serving
-    - Registrar metadatos de cada versión de features
-    """
+    """Comparte el esquema de features y registra versiones de datos locales."""
 
     STORE_DIR = "feature_store"
     METADATA_FILE = "feature_store/metadata.json"
 
-    # Definición centralizada de features
+    # Estas listas fijan el orden de entrada esperado por ColumnTransformer.
     NUMERIC_FEATURES = [
         "longitude",
         "latitude",
@@ -54,7 +42,7 @@ class FeatureStore:
 
     TARGET = "median_house_value"
 
-    # Features derivadas (ingeniería de features)
+    # Cada cociente se calcula igual durante reentrenamiento e inferencia.
     DERIVED_FEATURES = {
         "rooms_per_household": ("total_rooms", "households"),
         "bedrooms_per_room": ("total_bedrooms", "total_rooms"),
@@ -80,7 +68,7 @@ class FeatureStore:
 
     def add_derived_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Calcula features derivadas a partir de las originales.
+        Calcula cocientes a partir de columnas originales, sin alterar df.
 
         Estas features capturan relaciones como:
         - rooms_per_household: tamaño promedio de vivienda
@@ -93,6 +81,7 @@ class FeatureStore:
         Returns:
             DataFrame con las columnas derivadas añadidas.
         """
+        # Los denominadores cero pasan a NaN y luego se imputan en el pipeline.
         df = df.copy()
         for name, (numerator, denominator) in self.DERIVED_FEATURES.items():
             if numerator in df.columns and denominator in df.columns:
@@ -103,7 +92,7 @@ class FeatureStore:
         """
         Construye el preprocesador estándar del Feature Store.
 
-        Define las transformaciones canónicas:
+        Define las transformaciones para modelos reentrenados:
         - Numéricas: Imputación por mediana + Escalado StandardScaler
         - Categóricas: Imputación por moda + OneHotEncoder
 
@@ -139,8 +128,8 @@ class FeatureStore:
         """
         Registra una nueva versión de features en el store.
 
-        Guarda los datos transformados como parquet y registra
-        metadatos incluyendo estadísticas de cada feature.
+        Guarda el DataFrame recibido en Parquet y registra su esquema básico.
+        No guarda estadísticas ni la configuración del preprocesador.
 
         Args:
             df: DataFrame con los datos de features.
@@ -149,7 +138,8 @@ class FeatureStore:
         Returns:
             ID de la versión registrada.
         """
-        version_id = datetime.now().strftime("v_%Y%m%d_%H%M%S")
+        # Microsegundos evitan sobrescribir versiones creadas en el mismo segundo.
+        version_id = datetime.now().strftime("v_%Y%m%d_%H%M%S_%f")
         version_path = os.path.join(self.STORE_DIR, f"{version_id}.parquet")
 
         # Guardar features como parquet

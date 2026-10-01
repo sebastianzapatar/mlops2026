@@ -32,12 +32,14 @@ uv → EDA → Pipeline → Cross-Validation → MLFlow → Parquet → Docker �
 
 ```
 mlops/
-├── train.py                    # 🤖 Entrenamiento de 10 modelos con CV 5-Fold
+├── train.py                    # 🤖 10 modelos; selección por CV 5-Fold
 ├── app.py                      # 🚀 API REST con FastAPI
-├── monitor.py                  # 📈 Monitoreo de drift y logging
+├── pycaret_app.py              # 🚀 API del pipeline exportado por PyCaret
+├── pycaret_features.py         # 🧩 Esquema compartido notebook/API
+├── monitor.py                  # 📈 Valores atípicos y registro de predicciones
 ├── feature_store.py            # 🧮 Feature Store centralizado
 ├── retrain.py                  # 🔄 Reentrenamiento automático
-├── eda.ipynb                   # 📊 Notebook de análisis exploratorio
+├── eda.ipynb                   # 📊 EDA + PyCaret + MLflow + exportación
 ├── reportes/                   # 📑 Reportes HTML de Sweetviz (generados por eda.ipynb)
 ├── 1553768847-housing.csv      # 📁 Dataset original
 ├── pyproject.toml              # 📦 Dependencias (uv)
@@ -47,10 +49,11 @@ mlops/
 ├── compose.yml                 # 🐳 Docker Compose (API + MLFlow)
 ├── model_metrics.json          # 📋 Métricas del modelo actual
 ├── tests/
-│   └── test_pipeline.py        # 🧪 18 tests
+│   ├── test_pipeline.py        # 🧪 Pipeline original
+│   └── test_pycaret_serving.py # 🧪 Esquema y API PyCaret
 ├── .github/workflows/
 │   ├── ci_cd.yml               # ⚙️ CI/CD: lint → train → tests → GitHub Pages
-│   └── retrain.yml             # 🔄 Reentrenamiento semanal
+│   └── retrain.yml             # 🔄 Reentrenamiento semanal como artefacto
 ├── mlops.html                  # 🎓 Presentación 1: Intro a MLOps
 ├── index.html                  # 🎓 Presentación 2: Pipeline práctico
 └── presentacion_mlops_avanzado.html  # 🎓 Presentación 3: MLOps avanzado
@@ -79,6 +82,7 @@ uv sync
 | *(principal)* | pandas, scikit-learn, mlflow, fastapi, uvicorn, pyarrow | Siempre (también en Docker) |
 | `dev` | pytest, flake8, httpx2 | Tests y CI |
 | `eda` | jupyter, matplotlib, seaborn, sweetviz, nbformat | Notebook `eda.ipynb` |
+| `pycaret` *(opcional)* | PyCaret 4.0.0a8 | Sección 16 del notebook |
 
 Para instalar solo lo necesario para producción: `uv sync --no-default-groups`.
 
@@ -88,7 +92,7 @@ Para instalar solo lo necesario para producción: `uv sync --no-default-groups`.
 uv run python train.py
 ```
 
-Esto entrena **10 modelos de regresión** con **validación cruzada 5-Fold** y registra todo en MLFlow:
+Esto entrena **10 modelos de regresión** con **validación cruzada 5-Fold** y registra todo en MLFlow. El mejor se elige por el RMSE promedio de CV; el conjunto de prueba se reserva para informar el resultado final:
 
 | Modelo | RMSE Test ($) | CV RMSE μ ($) | CV σ ($) | R² |
 |--------|--------------|---------------|----------|------|
@@ -151,7 +155,7 @@ curl -X POST http://localhost:8000/predict \
 
 ## 🔬 Análisis Exploratorio (EDA)
 
-El notebook `eda.ipynb` contiene **15 secciones**: 13 de EDA tradicional y 2 de EDA automatizado con Sweetviz:
+El notebook `eda.ipynb` contiene **16 secciones**: 13 de EDA tradicional, 2 de EDA automatizado con Sweetviz y una de PyCaret:
 
 1. **Información general** del dataset
 2. **Estadísticas descriptivas** con heatmap
@@ -168,12 +172,30 @@ El notebook `eda.ipynb` contiene **15 secciones**: 13 de EDA tradicional y 2 de 
 13. **Conclusiones** del análisis
 14. **Sweetviz** — reporte general, Train vs Test (misma partición de `train.py`) e Interior vs Costa
 15. **Tradicional vs Sweetviz** — verificación de que ambos coinciden y tabla comparativa
+16. **PyCaret 4 + MLflow** — comparación por CV, un run y modelo por candidato, prueba externa, exportación y API
 
 Los reportes HTML de Sweetviz quedan en `reportes/` y se enlazan desde la presentación.
 
 ```bash
 uv run jupyter notebook eda.ipynb
 ```
+
+### Experimentos PyCaret
+
+PyCaret `4.0.0a8` está fijado como grupo opcional en `uv.lock`. Es una versión preliminar compatible con Python 3.12 y el scikit-learn del proyecto; usa `RegressionExperiment`. El notebook registra cada candidato explícitamente en MLflow, porque el registro automático de PyCaret 3 no forma parte de la API 4.
+
+```bash
+uv sync --locked --group pycaret
+uv run --group pycaret jupyter notebook eda.ipynb
+```
+
+Ejecuta la sección 16 para guardar `models/pycaret_housing.pkl`. El notebook utiliza una transformación numérica compartida con [pycaret_app.py](pycaret_app.py), reserva una prueba externa antes de comparar candidatos y guarda el pipeline final con su preprocesamiento. Para servirlo localmente:
+
+```bash
+uv run uvicorn pycaret_app:app --reload
+```
+
+La API original de `app.py` y su archivo `best_model.pkl` siguen disponibles para el flujo manual anterior.
 
 ---
 
@@ -230,12 +252,12 @@ preprocessor = ColumnTransformer([
 
 El módulo `monitor.py` implementa:
 
-- **Logging** de cada predicción con timestamp
-- **Data drift detection** usando z-score (umbral: 3σ)
-- **Resumen estadístico** en tiempo real
+- **Registro en memoria** de cada predicción con timestamp; vuelca lotes de 100 a un archivo local
+- **Detección de valores individuales atípicos** usando z-score (umbral: 3σ). La ruta se llama `check-drift` por compatibilidad, pero no compara distribuciones.
+- **Resumen estadístico** de las predicciones del proceso actual
 
 ```bash
-# Verificar drift
+# Comprobar valores atípicos
 curl -X POST http://localhost:8000/monitor/check-drift \
   -H "Content-Type: application/json" \
   -d '{"longitude":-122.23, "latitude":37.88, ...}'
@@ -244,21 +266,24 @@ curl -X POST http://localhost:8000/monitor/check-drift \
 curl http://localhost:8000/monitor/summary
 ```
 
+El monitor no dispara el reentrenamiento ni mide error de predicción, porque la API no recibe el valor real de la vivienda. El workflow semanal ejecuta `retrain.py` y publica `best_model.pkl` junto con sus métricas como artefacto de GitHub Actions; no despliega el modelo en la API. Para usarlo localmente, descarga el artefacto y reinicia la API. La comparación de RMSE en `retrain.py` usa el holdout del CSV y solo es comparable si los datos y la partición de evaluación siguen siendo los mismos.
+
 ---
 
 ## 🐳 Docker
 
 ```bash
-# Construir y levantar
-docker compose up -d
+# Construir y levantar MLflow, Jupyter y la API PyCaret
+docker compose up --build
 
-# Ver logs
-docker compose logs -f api
+# El token de Jupyter aparece en los logs del servicio
+docker compose logs notebook
+
+# Después de ejecutar la sección 16 del notebook
+docker compose restart api
 ```
 
-El Dockerfile usa **multi-stage build**: el *builder* copia el binario de uv y crea `.venv` desde `uv.lock` (`uv sync --locked --no-default-groups`); la imagen final solo copia ese `.venv` y el código, sin Jupyter, pytest ni uv. Tamaño: ~1.3 GB en disco (282 MB comprimida).
-
-> Primero hay que entrenar (`uv run python train.py`), porque la imagen copia `best_model.pkl`.
+Abre Jupyter en `http://localhost:8888`, MLflow en `http://localhost:5050` y Swagger de FastAPI en `http://localhost:8000/docs`. Las tres imágenes se construyen con `uv.lock`: API y MLflow usan dependencias principales; Jupyter añade los grupos `eda` y `pycaret`. El directorio `models/` se comparte entre notebook y API, y un volumen nombrado conserva el servidor MLflow. Hasta exportar el modelo, `/health` responde 503; después de exportarlo hay que reiniciar la API para que cargue el nuevo archivo.
 
 ---
 
@@ -270,12 +295,13 @@ uv run pytest -v
 uv run flake8 *.py tests/ --max-line-length=120
 ```
 
-18 tests que cubren:
-- ✅ Feature Store (features derivadas, preprocesador, info) — 3
+23 tests que cubren:
+- ✅ Feature Store (features derivadas, preprocesador, info, versiones) — 4
 - ✅ Monitor (logging, drift normal, drift extremo, resumen) — 5
 - ✅ Integridad de datos (CSV existe, columnas correctas, modelo existe) — 3
-- ✅ API (`/health`, `/predict` con el modelo de `train.py` y el de `retrain.py`, payload inválido → 422, drift) — 5
+- ✅ API (`/health`, `/predict` con el modelo de `train.py` y el de `retrain.py`, modelo ausente → 503, payload inválido → 422, valores atípicos) — 6
 - ✅ Serialización (los modelos se pueden guardar en MLflow con skops) — 2
+- ✅ PyCaret (esquema de features, inferencia y errores de la API) — 3
 
 ---
 
@@ -302,7 +328,7 @@ Se publican en GitHub Pages con cada push a `main`. Orden sugerido (cada una tie
 | **API** | FastAPI + Uvicorn |
 | **Contenedores** | Docker + Docker Compose |
 | **CI/CD** | GitHub Actions |
-| **Monitoreo** | Data drift (z-score) |
+| **Monitoreo** | Valores atípicos por z-score |
 
 ---
 

@@ -1,59 +1,50 @@
-# ──────────────────────────────────────────────
-# Dockerfile para el API de predicción
-# Imagen multi-stage para menor tamaño
-# ──────────────────────────────────────────────
+# Todas las etapas usan Python 3.12 y las versiones fijadas en uv.lock.
+FROM python:3.12-slim AS dependencies
 
-# Stage 1: Builder - Instala dependencias con uv
-FROM python:3.12-slim AS builder
-
-# Copiar el binario de uv desde su imagen oficial (no hace falta pip install)
+# Tomar uv de su imagen oficial evita instalar paquetes con pip.
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/uv
 
-# Compilar .pyc para arrancar más rápido; usar el Python de la imagen (no descargar otro)
-ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy \
-    UV_PYTHON_DOWNLOADS=0
-
+# Reutilizar el Python de la imagen y copiar archivos al entorno virtual.
+ENV UV_PYTHON_DOWNLOADS=0 UV_LINK_MODE=copy UV_COMPILE_BYTECODE=1
 WORKDIR /app
-
-# Copiar archivos de dependencias
 COPY pyproject.toml uv.lock .python-version ./
 
-# Crear /app/.venv exactamente con las versiones de uv.lock
-# --no-default-groups: sin dev (pytest) ni eda (Jupyter, matplotlib)
+# API y MLflow necesitan solo las dependencias principales.
 RUN uv sync --locked --no-default-groups
 
-# Stage 2: Runner - Imagen final ligera
-FROM python:3.12-slim AS runner
+# El cuaderno necesita PyCaret y las librerías de análisis exploratorio.
+FROM dependencies AS notebook-dependencies
+RUN uv sync --locked --no-default-groups --group eda --group pycaret
 
+# API: carga el modelo exportado desde el volumen /app/models.
+FROM python:3.12-slim AS api
 WORKDIR /app
-
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Copiar el entorno virtual del builder (sin uv ni caché)
-COPY --from=builder /app/.venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
-
-# Copiar código de la aplicación
-COPY app.py .
-COPY monitor.py .
-COPY feature_store.py .
-
-# Copiar el modelo entrenado
-COPY best_model.pkl .
-
-# Copiar datos para el feature store
-COPY 1553768847-housing.csv .
-
-# Exponer puerto del API
+COPY --from=dependencies /app/.venv /app/.venv
+COPY pycaret_app.py pycaret_features.py ./
+ENV PATH="/app/.venv/bin:$PATH" MODEL_PATH=/app/models/pycaret_housing.pkl
 EXPOSE 8000
-
-# Healthcheck para monitoreo
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -fsS http://localhost:8000/health || exit 1
+CMD ["uvicorn", "pycaret_app:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# Ejecutar API con Uvicorn
-ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# MLflow: el volumen /mlflow conserva SQLite y los artefactos entre reinicios.
+FROM python:3.12-slim AS mlflow
+WORKDIR /app
+COPY --from=dependencies /app/.venv /app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+EXPOSE 5050
+CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5050", \
+     "--allowed-hosts", "mlflow:5050,localhost:5050,127.0.0.1:5050", \
+     "--backend-store-uri", "sqlite:////mlflow/mlflow.db", \
+     "--default-artifact-root", "/mlflow/artifacts"]
+
+# Notebook: instala grupos opcionales con uv y comparte el directorio de modelos.
+FROM python:3.12-slim AS notebook
+WORKDIR /app
+COPY --from=notebook-dependencies /app/.venv /app/.venv
+COPY eda.ipynb pycaret_features.py 1553768847-housing.csv ./
+ENV PATH="/app/.venv/bin:$PATH" MPLCONFIGDIR=/tmp/matplotlib
+EXPOSE 8888
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]

@@ -1,0 +1,17 @@
+# Dependencias y cachés locales no forman parte del contexto de construcción.
+.venv/
+__pycache__/
+.pytest_cache/
+.git/
+.idea/
+.ipynb_checkpoints/
+
+# Los artefactos se comparten por volúmenes de Compose.
+models/
+mlruns/
+mlflow.db
+best_model.pkl
+test_predictions.parquet
+feature_store/
+logs/
+reportes/

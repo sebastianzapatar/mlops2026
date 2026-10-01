@@ -60,10 +60,10 @@
 <div class="g2">
 <div class="c"><h4><span class="sn">1</span> CI/CD con GitHub Actions</h4><p>Automatización de tests, entrenamiento y despliegue.</p></div>
 <div class="c"><h4><span class="sn">2</span> Contenedores con Docker</h4><p>Dockerfile multi-stage y Docker Compose.</p></div>
-<div class="c"><h4><span class="sn">3</span> Monitoreo en Producción</h4><p>Data drift, logging de predicciones y alertas.</p></div>
+<div class="c"><h4><span class="sn">3</span> Monitoreo en Producción</h4><p>Valores atípicos, logging de predicciones y alertas.</p></div>
 <div class="c"><h4><span class="sn">4</span> Reentrenamiento Automático</h4><p>Pipeline programado con comparación de modelos.</p></div>
 <div class="c"><h4><span class="sn">5</span> Feature Store</h4><p>Centralización y versionado de features.</p></div>
-<div class="c"><h4><span class="sn">6</span> Tests y Calidad</h4><p>18 tests: pipeline, API y serialización del modelo.</p></div>
+<div class="c"><h4><span class="sn">6</span> Tests y Calidad</h4><p>20 tests: pipeline, API y serialización del modelo.</p></div>
 </div>
 </section>
 
@@ -88,7 +88,7 @@
 <div class="sh">SECCIÓN 1</div>
 <h2>Jobs del Pipeline CI/CD</h2>
 <div class="g3">
-<div class="c"><h4>🧪 Job 1: Tests &amp; Lint</h4><p>• Instala uv (<code>setup-uv</code>)<br>• <code>uv sync --locked</code><br>• Lint con flake8<br>• Entrena con <code>train.py</code><br>• Ejecuta pytest (18 tests)</p></div>
+<div class="c"><h4>🧪 Job 1: Tests &amp; Lint</h4><p>• Instala uv (<code>setup-uv</code>)<br>• <code>uv sync --locked --no-group eda</code><br>• Lint con flake8<br>• Entrena con <code>train.py</code><br>• Ejecuta pytest (20 tests)</p></div>
 <div class="c"><h4>🌐 Job 2: Deploy Pages</h4><p>• Depende de que el Job 1 pase<br>• Solo en rama <code>main</code><br>• Publica estas presentaciones en GitHub Pages</p></div>
 <div class="c" style="border-left-style:dashed;"><h4>🐳 Siguiente paso (propuesto)</h4><p>• Build de la imagen Docker<br>• Push a un registry (GHCR / Docker Hub)<br>• Tag <code>latest</code> + SHA del commit</p></div>
 </div>
@@ -197,10 +197,10 @@ ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code><
 <section>
 <div class="sh">SECCIÓN 3</div>
 <h2><span class="sn">3</span> Monitoreo del Modelo</h2>
-<div class="c" style="text-align:center"><p style="font-size:.8em">Un modelo en producción se <strong>degrada con el tiempo</strong>. El monitoreo detecta cuándo el comportamiento de los datos cambia (<em>data drift</em>).</p></div>
+<div class="c" style="text-align:center"><p style="font-size:.8em">Un modelo en producción puede degradarse con el tiempo. Aquí se señalan <strong>entradas individuales atípicas</strong>; medir drift requiere comparar conjuntos de datos.</p></div>
 <div class="g3">
 <div class="c"><h4>📊 Logging</h4><p>Cada predicción se registra con timestamp, inputs y output para auditoría.</p></div>
-<div class="c"><h4>⚠️ Drift Detection</h4><p>Compara cada input contra la distribución original usando z-score (umbral: 3σ).</p></div>
+<div class="c"><h4>⚠️ Valores atípicos</h4><p>Compara cada valor numérico con su media original usando z-score (umbral: 3σ).</p></div>
 <div class="c"><h4>📈 Resumen</h4><p>Estadísticas en tiempo real: total, promedio, min, max de predicciones.</p></div>
 </div>
 </section>
@@ -211,7 +211,7 @@ ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code><
 <h2>Código del Monitor</h2>
 <pre><code class="language-python">class ModelMonitor:
     def check_drift(self, input_data: dict) -> dict:
-        """Detecta data drift usando z-score."""
+        """Señala valores individuales a más de 3σ de la media."""
         drifted = []
         for feature, stats in self.reference_stats.items():
             if feature in input_data and stats["std"] > 0:
@@ -221,7 +221,7 @@ ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code><
         return {"has_drift": len(drifted) > 0, "drifted_features": drifted}
 
     def log_prediction(self, input_data, prediction):
-        """Registra predicción y verifica drift."""
+        """Registra predicción y comprueba valores atípicos."""
         record = {"timestamp": now(), "input": input_data, "prediction": prediction}
         self.predictions_log.append(record)
         drift = self.check_drift(input_data)
@@ -237,7 +237,7 @@ ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code><
 <div>
 <div class="c"><h4>GET /health</h4><p>Healthcheck para Docker y load balancers.</p></div>
 <div class="c"><h4>GET /monitor/summary</h4><p>Resumen de predicciones: total, promedio, min, max.</p></div>
-<div class="c"><h4>POST /monitor/check-drift</h4><p>Verifica drift en datos de entrada específicos.</p></div>
+<div class="c"><h4>POST /monitor/check-drift</h4><p>Señala valores atípicos en una entrada; la ruta conserva su nombre por compatibilidad.</p></div>
 </div>
 <div>
 <pre><code class="language-json">// GET /monitor/summary
@@ -269,7 +269,7 @@ ENTRYPOINT ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]</code><
 <div class="c" style="text-align:center"><h4>¿Cuándo reentrenar?</h4>
 <p>• <strong>Programado:</strong> Cada lunes a las 6 AM (cron en GitHub Actions)<br>
 • <strong>Manual:</strong> Desde la UI de GitHub con workflow_dispatch<br>
-• <strong>Por drift:</strong> el monitor registra la alerta en los logs → se lanza el workflow (hoy de forma manual)</p></div>
+• <strong>Por alerta:</strong> el monitor escribe una advertencia; una persona puede ejecutar el workflow manualmente</p></div>
 <div class="pf">
 <div class="ps a">Datos nuevos</div><span class="pa">→</span>
 <div class="ps a">Feature Store</div><span class="pa">→</span>
@@ -325,12 +325,14 @@ jobs:
       - uses: astral-sh/setup-uv@v10
       - run: uv sync --locked --no-default-groups
       - run: uv run python retrain.py
-      - run: |
-          git config user.name "GitHub Actions Bot"
-          git add model_metrics.json feature_store/
-          git diff --staged --quiet || \
-            git commit -m "🤖 Auto-retrain $(date +%Y-%m-%d)"
-          git push</code></pre>
+      - uses: actions/upload-artifact@v4
+        with:
+          name: retrained-model
+          path: |
+            best_model.pkl
+            model_metrics.json
+            feature_store/</code></pre>
+<p class="muted" style="font-size:.55em">El workflow guarda un artefacto para revisión; la API no se actualiza automáticamente.</p>
 </section>
 
 <!-- Feature Store Intro -->
@@ -387,16 +389,16 @@ TestAPI::test_predict_with_retrained_model    PASSED
 TestAPI::test_predict_invalid_payload         PASSED
 TestModelSerialization::test_skops_trusted_types[knn] PASSED
 ...
-============= 18 passed in 2.27s =============</code></pre>
+============= 20 passed =============</code></pre>
 </div>
 <div>
 <table style="width:100%;font-size:.55em;border-collapse:collapse">
 <thead><tr><th style="background:var(--v);color:#fff;padding:6px 10px;text-align:left">Grupo</th><th style="background:var(--v);color:#fff;padding:6px 10px">#</th><th style="background:var(--v);color:#fff;padding:6px 10px;text-align:left">Qué verifica</th></tr></thead>
 <tbody>
-<tr><td style="padding:6px 10px">Feature Store</td><td>3</td><td>Features derivadas, preprocesador, info</td></tr>
+<tr><td style="padding:6px 10px">Feature Store</td><td>4</td><td>Features derivadas, preprocesador, info, versiones</td></tr>
 <tr><td style="padding:6px 10px">Monitor</td><td>5</td><td>Logging, drift normal/extremo, resumen</td></tr>
 <tr><td style="padding:6px 10px">Datos</td><td>3</td><td>CSV, columnas, modelo entrenado</td></tr>
-<tr><td style="padding:6px 10px">API</td><td>5</td><td>/health, /predict (ambos modelos), 422, drift</td></tr>
+<tr><td style="padding:6px 10px">API</td><td>6</td><td>/health, /predict (ambos modelos), 503, 422, valores atípicos</td></tr>
 <tr><td style="padding:6px 10px">Serialización</td><td>2</td><td>Los modelos se guardan en MLflow (skops)</td></tr>
 </tbody>
 </table>
@@ -414,13 +416,13 @@ TestModelSerialization::test_skops_trusted_types[knn] PASSED
 │   ├── ci_cd.yml               # CI/CD: lint → train → tests → Pages
 │   └── retrain.yml             # Reentrenamiento programado
 ├── tests/
-│   └── test_pipeline.py        # 18 tests
+│   └── test_pipeline.py        # 20 tests
 ├── feature_store/              # Versiones de features (parquet)
 ├── logs/                       # Logs de predicciones
 ├── train.py                    # Entrenamiento (10 modelos)
 ├── retrain.py                  # Reentrenamiento automático
 ├── app.py                      # API FastAPI + monitoreo
-├── monitor.py                  # Data drift + logging
+├── monitor.py                  # Valores atípicos + logging
 ├── feature_store.py            # Feature Store centralizado
 ├── Dockerfile                  # Imagen multi-stage con uv
 ├── compose.yml                 # API + MLflow
@@ -444,9 +446,9 @@ TestModelSerialization::test_skops_trusted_types[knn] PASSED
 </div>
 <div class="g2">
 <div class="c"><h4>✅ Implementado</h4>
-<p>• CI/CD en GitHub Actions: lint, tests y deploy<br>• Docker multi-stage + Compose<br>• Monitoreo con data drift (z-score)<br>• Reentrenamiento semanal automático<br>• Feature Store con versionado<br>• 18 tests (pipeline, API, serialización)</p></div>
+<p>• CI/CD en GitHub Actions: lint, tests y Pages<br>• Docker multi-stage + Compose<br>• Alertas de valores atípicos (z-score)<br>• Reentrenamiento semanal con artefacto para revisión<br>• Feature Store con versionado<br>• 20 tests (pipeline, API, serialización)</p></div>
 <div class="c"><h4>🎯 Beneficios</h4>
-<p>• Despliegue sin intervención manual<br>• Modelo siempre actualizado<br>• Detección temprana de degradación<br>• Features consistentes train/serve<br>• Trazabilidad completa<br>• Entorno reproducible</p></div>
+<p>• Presentaciones publicadas automáticamente<br>• Modelo reentrenado disponible como artefacto<br>• Alertas tempranas sobre entradas atípicas<br>• Features consistentes train/serve<br>• Trazabilidad de experimentos<br>• Entorno reproducible</p></div>
 </div>
 <p style="text-align:center;font-size:.7em;margin-top:16px;color:var(--go);font-weight:600">Universidad EIA — Ingeniería con propósito</p>
 </section>
@@ -456,6 +458,9 @@ TestModelSerialization::test_skops_trusted_types[knn] PASSED
 <div class="ft">Universidad EIA · MLOps Avanzado</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
-<script>Reveal.initialize({hash:true,plugins:[RevealHighlight],transition:'slide',slideNumber:'c/t',width:1100,height:700,margin:.06,center:true});</script>
+<script>
+// Configuración compartida de navegación y resaltado de código del curso.
+Reveal.initialize({hash:true,plugins:[RevealHighlight],transition:'slide',slideNumber:'c/t',width:1100,height:700,margin:.06,center:true});
+</script>
 </body>
 </html>

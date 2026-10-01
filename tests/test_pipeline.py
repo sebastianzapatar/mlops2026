@@ -46,6 +46,18 @@ class TestFeatureStore:
         assert "categorical_features" in info
         assert info["target"] == "median_house_value"
 
+    def test_versions_do_not_overwrite_each_other(self, tmp_path, monkeypatch):
+        """Dos registros seguidos conservan ambos archivos y metadatos."""
+        monkeypatch.setattr(FeatureStore, "STORE_DIR", str(tmp_path))
+        monkeypatch.setattr(FeatureStore, "METADATA_FILE", str(tmp_path / "metadata.json"))
+        fs = FeatureStore()
+        first = fs.register_version(pd.DataFrame({"value": [1]}))
+        second = fs.register_version(pd.DataFrame({"value": [2]}))
+
+        assert first != second
+        assert fs.get_features(first)["value"].tolist() == [1]
+        assert fs.get_features(second)["value"].tolist() == [2]
+
 
 class TestMonitor:
     """Tests para el sistema de monitoreo."""
@@ -135,7 +147,7 @@ def _small_pipeline(model, preprocessor, with_derived=False, n=500):
 
 
 class TestAPI:
-    """Tests de la API FastAPI (sin levantar el servidor)."""
+    """Prueba rutas con TestClient, sin abrir un puerto de red."""
 
     @pytest.fixture
     def client(self):
@@ -148,6 +160,14 @@ class TestAPI:
         response = client.get("/health")
         assert response.status_code == 200
         assert response.json()["status"] == "healthy"
+
+    def test_model_unavailable(self, client, monkeypatch):
+        """Un proceso sin artefacto debe fallar el healthcheck y la inferencia."""
+        import app
+
+        monkeypatch.setattr(app, "model", None)
+        assert client.get("/health").status_code == 503
+        assert client.post("/predict", json=SAMPLE_HOUSE).status_code == 503
 
     def test_predict(self, client):
         """El modelo de train.py predice un valor positivo."""

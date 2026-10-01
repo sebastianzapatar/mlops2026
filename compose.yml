@@ -1,34 +1,43 @@
 services:
-  # ── API de Predicción ──
-  api:
-    build: .
-    container_name: mlops-api
+  # El notebook exporta el pipeline a ./models mediante el volumen compartido.
+  notebook:
+    build:
+      context: .
+      target: notebook
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8888:8888"
     environment:
-      - MODEL_PATH=/app/best_model.pkl
-      - LOG_LEVEL=info
+      MLFLOW_TRACKING_URI: http://mlflow:5050
     volumes:
-      - ./logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - ./models:/app/models
+      - ./eda.ipynb:/app/eda.ipynb
+      - ./reportes:/app/reportes
+    depends_on:
+      - mlflow
 
-  # ── MLFlow Tracking Server ──
-  mlflow:
-    image: python:3.12-slim
-    container_name: mlops-mlflow
-    command: >
-      bash -c "pip install mlflow &&
-      mlflow server --host 0.0.0.0 --port 5050
-      --backend-store-uri sqlite:///mlflow.db
-      --default-artifact-root /mlruns"
+  # La API lee el archivo exportado al arrancar; después de entrenar, reiniciarla.
+  api:
+    build:
+      context: .
+      target: api
     ports:
-      - "5050:5050"
+      - "127.0.0.1:8000:8000"
+    environment:
+      MODEL_PATH: /app/models/pycaret_housing.pkl
     volumes:
-      - ./mlruns:/mlruns
-      - ./mlflow.db:/mlflow.db
+      - ./models:/app/models:ro
     restart: unless-stopped
+
+  # SQLite y artefactos viven en un volumen nombrado, no dentro de la imagen.
+  mlflow:
+    build:
+      context: .
+      target: mlflow
+    ports:
+      - "127.0.0.1:5050:5050"
+    volumes:
+      - mlflow_data:/mlflow
+    restart: unless-stopped
+
+volumes:
+  mlflow_data:
